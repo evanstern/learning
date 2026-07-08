@@ -1,0 +1,19 @@
+# Corpus: DDB HTML is copyrighted — never commit it.
+# Drop your HTML files in corpus/ locally; they stay off git.
+corpus/
+!corpus/.gitkeep
+
+# SQLite databases (generated locally by bootstrap/ingest)
+*.db
+*.db-shm
+*.db-wal
+
+# Node
+node_modules/
+dist/
+
+# Environment (API keys live here — never commit)
+.env
+
+# macOS noise
+.DS_Store

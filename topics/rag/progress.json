@@ -1,0 +1,270 @@
+{
+  "$schema": "../_progress.schema.json",
+  "topic": "rag",
+  "title": "Retrieval-Augmented Generation",
+  "updated": "2026-06-24",
+  "mode": "build-along · delegated build (teach-me specs → build-me builds)",
+  "humanIndex": "topics/rag/SERIES.md",
+  "build": {
+    "location": "topics/rag/build/",
+    "stateDoc": "topics/rag/build/STATE.md",
+    "owner": "Claude Code (/build-me)",
+    "stack": "TypeScript",
+    "corpus": "D&D Beyond HTML (git-ignored, local)"
+  },
+  "lifecycle": [
+    "scaffolded",
+    "taught",
+    "spec'd",
+    "built",
+    "decked",
+    "done"
+  ],
+  "lifecycleNotes": {
+    "scaffolded": "lesson folder copied from _template/; checklist + raw-notes exist",
+    "taught": "Socratic session complete; every checklist item demonstrated",
+    "spec'd": "HANDOFF.md written for the build tool (delegated builds only)",
+    "built": "build-me implemented it; POST_BUILD_HANDOFF.md returned + STATE.md updated",
+    "decked": "deck.html (built FROM _template/deck.html) + guide.md produced, folding in build findings",
+    "done": "ALL definitionOfDone artifacts present + verified"
+  },
+  "definitionOfDone": {
+    "always": [
+      "checklist.md",
+      "raw-notes.md"
+    ],
+    "delegatedBuild": [
+      "HANDOFF.md",
+      "POST_BUILD_HANDOFF.md"
+    ],
+    "decksStandardForEveryLesson": [
+      "deck.html",
+      "guide.md"
+    ],
+    "gates": [
+      "deck.html MUST be built FROM topics/_template/deck.html (do not hand-roll or copy another lesson's deck)",
+      "deck.html + guide.md are produced AFTER the build returns, so they can fold in POST_BUILD findings",
+      "a lesson is 'done' only when every artifact in its `artifacts` map is true AND verified to exist on disk"
+    ]
+  },
+  "cursor": {
+    "current": "104-retrieval",
+    "currentStatus": "planned",
+    "nextAction": "start 104 via /teach-me: hybrid retrieval (dense + BM25/sparse, RRF fusion). Concrete 'before' = the surviving #2 Deep Gnome / Giants intruders from the 103 build run.",
+    "afterBuild": "104 HANDOFF → /build-me → return leg (deck + guide)",
+    "blockedOn": "none"
+  },
+  "lessons": [
+    {
+      "id": "101-foundations",
+      "n": 101,
+      "title": "Foundations & the design space",
+      "status": "done",
+      "artifacts": {
+        "checklist": true,
+        "rawNotes": true,
+        "handoff": true,
+        "postBuild": true,
+        "deck": true,
+        "guide": true
+      },
+      "buildIncrement": "Scaffold the-stacks v2 (TS) as a walking skeleton: real interfaces, dumb-but-real bodies, runs end-to-end.",
+      "motivator": "RAG is a pipeline of decisions; retrieval is the ceiling; evidence beats folk wisdom.",
+      "feedsForward": "Stable interfaces every later lesson swaps behind; baseline MRR ≈ 0.33 on the goblin query for 107.",
+      "decisions": [
+        "walking skeleton over stubs (107 needs a runnable baseline)",
+        "deck glossary-on-hover convention introduced (BM25 tooltip)"
+      ],
+      "gotchas": [
+        "the 'idempotent re-ingest' claim made here was later found false in 102"
+      ],
+      "handoff": {
+        "specd": true,
+        "returned": true,
+        "foldedIn": true
+      }
+    },
+    {
+      "id": "102-ingest",
+      "n": 102,
+      "title": "Ingestion: HTML → chunks",
+      "status": "done",
+      "artifacts": {
+        "checklist": true,
+        "rawNotes": true,
+        "handoff": true,
+        "postBuild": true,
+        "deck": true,
+        "guide": true
+      },
+      "deckGuideNote": "BACKFILLED 2026-06-24 — build was done earlier but the deck/guide pass never fired (the drift this tracker now prevents).",
+      "buildIncrement": "Structure-aware chunking (one chunk per heading section, size guard sub-split/merge, atomic stat-block divs kept whole) + metadata sidecar (source, breadcrumbs[], chunkId, kind).",
+      "motivator": "Fixed-size windows split across monster boundaries → polluted embeddings + citations.",
+      "feedsForward": "Clean per-monster chunks; meta bag populated so 104 hybrid needs no schema reshape; breadcrumbs double as citation + filter key.",
+      "decisions": [
+        "chunk = smallest unit holding a whole answer",
+        "size is a guard not a rule (tune in 107)",
+        "structure-aware over semantic chunking (cheaper, fits templated corpus)"
+      ],
+      "gotchas": [
+        "DDB has ZERO <table> elements — stat blocks are div.stat-block-background (spec's 'keep tables whole' framing was wrong)",
+        "vec0 ignores INSERT OR REPLACE → 101's re-ingest actually crashed; fixed with DELETE-then-INSERT in store.ts",
+        "102 fixed chunk CONTENT not neighbor RANKING — that's 103 (clean split of blame)"
+      ],
+      "handoff": {
+        "specd": true,
+        "returned": true,
+        "foldedIn": true
+      }
+    },
+    {
+      "id": "103-embeddings",
+      "n": 103,
+      "title": "Embeddings + vector store",
+      "status": "done",
+      "artifacts": {
+        "checklist": true,
+        "rawNotes": true,
+        "handoff": true,
+        "postBuild": true,
+        "deck": true,
+        "guide": true
+      },
+      "buildIncrement": "Swapped HashingEmbedder → OllamaEmbedder (nomic-embed-text, 768-dim, local, L2-normalized) behind the unchanged Embedder interface; activated Ollama in docker-compose + bootstrap pull; dim 256→768 forced wipe + re-ingest. Kept brute-force sqlite-vec (no ANN); corrected the ANN docstring.",
+      "motivator": "Clean chunks (from 102) but neighbors still mis-ranked (Grimlock/Gith at #2/#3) — an embedding artifact. MRR ≈ 0.33.",
+      "feedsForward": "VERIFIED: real semantic ranking → Goblins #1 (0.586, clearly ahead), Goblin Boss #3, Goblin #4; MRR 0.33→1.0; Grimlock/Gith gone from top 12. Surviving #2 Deep Gnome + Giants cluster (lexical/identifier gap) = 104 hybrid's concrete 'before'. Embedding cost baseline: ~10s / 48 chunks (~200ms/chunk, batched) for 107.",
+      "decisions": [
+        "nomic-embed-text (768) local via Ollama: cost/privacy/repeatability over hosted quality ceiling",
+        "OllamaEmbedder MUST L2-normalize (store ranks by L2; normalize → cosine-equivalent — applies the unit-sphere lesson)",
+        "keep brute-force exact KNN — right at our scale; Store stays swappable",
+        "no nomic task-prefixes — confirmed unnecessary live (bare model cleared the AC); kept symmetric Embedder interface, deferred prefixes to 107"
+      ],
+      "gotchas": [
+        "BUILD CONFIRMED LIVE + RESOLVED: stale 256-dim stacks.db + CREATE TABLE IF NOT EXISTS silently keeps old dim → 768-dim insert dies 'Dimension mismatch' mid-transaction. FIX (return leg, author-approved): store.init() now reads the existing vec_chunks dim from sqlite_master and throws a clear 'wipe + re-ingest' error (NOT auto-wipe) before any work. Author should fold this guard back into the lesson source + HANDOFF §5.",
+        "scores are compressed (0.52–0.59) on this homogeneous 48-monster corpus — ordering carries the signal, not gaps; good 'why normalize' teaching slide",
+        "surviving intruders are semantically HONEST (Deep Gnome/Giants all 'live underground') — the synonym win working, not a bug; it's the lexical gap, not a ranking failure",
+        "store.ts ANN→exact-KNN docstring corrected (done); demo query canonicalized to 'goblins live in?' (done)"
+      ],
+      "openThreads": [
+        "RESOLVED in return leg: store.init() dim-mismatch guard added (fail-loud, no auto-wipe) — reflect into lesson source + HANDOFF §5",
+        "before/after MRR (0.33→1.0) is the concrete 107 story — now real"
+      ],
+      "handoff": {
+        "specd": true,
+        "returned": true,
+        "foldedIn": true
+      }
+    },
+    {
+      "id": "104-retrieval",
+      "n": 104,
+      "title": "Retrieval: dense vs sparse vs hybrid",
+      "status": "planned",
+      "artifacts": {
+        "checklist": false,
+        "rawNotes": false,
+        "handoff": false,
+        "postBuild": false,
+        "deck": false,
+        "guide": false
+      },
+      "buildIncrement": "Add sparse (BM25) alongside dense; fuse with RRF behind the Retriever interface (HybridRetriever).",
+      "motivator": "Semantic search dilutes exact identifiers (e.g. 'Tasha's Hideous Laughter') — the mirror-image of dense's strength.",
+      "feedsForward": "Hybrid ranked results into reranking (105).",
+      "decisions": [
+        "BM25 vs SPLADE",
+        "RRF as default fusion",
+        "populate rawText/meta richly (columns already exist — no migration)"
+      ],
+      "gotchas": []
+    },
+    {
+      "id": "105-reranking",
+      "n": 105,
+      "title": "Reranking",
+      "status": "planned",
+      "artifacts": {
+        "checklist": false,
+        "rawNotes": false,
+        "handoff": false,
+        "postBuild": false,
+        "deck": false,
+        "guide": false
+      },
+      "buildIncrement": "Rerank stage over top-K (cross-encoder / hosted) behind the Reranker interface.",
+      "motivator": "Over-fetch then trim: a sharper model re-scores the K candidates the fast retriever returned.",
+      "feedsForward": "Precise top-few into generation (106).",
+      "decisions": [
+        "bi- vs cross-encoder",
+        "TS friction → hosted rerank API or transformers.js"
+      ],
+      "gotchas": []
+    },
+    {
+      "id": "106-generation",
+      "n": 106,
+      "title": "Generation + routing",
+      "status": "planned",
+      "artifacts": {
+        "checklist": false,
+        "rawNotes": false,
+        "handoff": false,
+        "postBuild": false,
+        "deck": false,
+        "guide": false
+      },
+      "buildIncrement": "End-to-end cited answers; interrogate the-stacks' wiki-routing (pre- vs post-filter) against the evidence.",
+      "motivator": "Context assembly + does routing earn its keep vs hybrid+rerank?",
+      "feedsForward": "A working product to evaluate (107) and harden (108).",
+      "decisions": [
+        "pre-filter (risky) vs post-filter/prune (safe)"
+      ],
+      "gotchas": []
+    },
+    {
+      "id": "107-evaluation",
+      "n": 107,
+      "title": "Evaluation",
+      "status": "planned",
+      "artifacts": {
+        "checklist": false,
+        "rawNotes": false,
+        "handoff": false,
+        "postBuild": false,
+        "deck": false,
+        "guide": false
+      },
+      "buildIncrement": "D&D eval set + harness; re-implement Ragas metrics in TS; measure retriever and generator independently.",
+      "motivator": "Magic numbers are folk wisdom — measure on your own corpus.",
+      "feedsForward": "Tune the guard numbers deferred since 102; baseline MRR 0.33 → target 1.0 story.",
+      "decisions": [
+        "re-implement eval metrics ourselves (TS)"
+      ],
+      "gotchas": []
+    },
+    {
+      "id": "108-hardening",
+      "n": 108,
+      "title": "Failure modes & hardening (capstone)",
+      "status": "planned",
+      "artifacts": {
+        "checklist": false,
+        "rawNotes": false,
+        "handoff": false,
+        "postBuild": false,
+        "deck": false,
+        "guide": false
+      },
+      "buildIncrement": "Harden the working product against Barnett's 7 failure points / 4 categories; debugging playbook.",
+      "motivator": "Retrieval errors cascade; out-of-corpus queries must abstain gracefully.",
+      "feedsForward": "A robust the-stacks v2.",
+      "decisions": [],
+      "gotchas": []
+    }
+  ],
+  "parked": [
+    "Agentic / iterative retrieval (multi-hop) — Ragas is single-shot",
+    "Long-context embedding models vs chunking",
+    "Graph/structured retrieval over D&D entities (typed fields + normalized monster DB)"
+  ]
+}

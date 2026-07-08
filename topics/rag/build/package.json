@@ -1,0 +1,31 @@
+{
+  "name": "the-stacks-v2",
+  "version": "0.1.0",
+  "description": "D&D corpus RAG — walking skeleton for an 8-lesson RAG course",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "ingest": "node --experimental-vm-modules dist/cli.js ingest",
+    "query": "node --experimental-vm-modules dist/cli.js query",
+    "demo": "node --experimental-vm-modules dist/cli.js demo",
+    "dev:ingest": "npx tsx src/cli.ts ingest",
+    "dev:query": "npx tsx src/cli.ts query",
+    "dev:demo": "npx tsx src/cli.ts demo"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
+    "better-sqlite3": "^12.11.1",
+    "dotenv": "^17.4.2",
+    "node-html-parser": "^6.1.13",
+    "sqlite-vec": "^0.1.9"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "volta": {
+    "node": "24.17.0"
+  }
+}

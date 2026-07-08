@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG 103 — Embeddings + the vector store</title>
+<!--
+  Built from topics/_template/deck.html (house style; see CLAUDE.md → "Deck & guide conventions").
+  Single self-contained file · no CDN · ⌘P → "Save as PDF" for a handout.
+  Built in the post-build return leg, so it folds in live findings (slides 9–10): MRR 0.33→1.0,
+  compressed scores, the dim-guard, the surviving intruder that motivates 104.
+-->
+<style>
+  :root{
+    --ink:#1b2733; --muted:#5a6776; --accent:#4f46e5; --accent2:#0e9488;
+    --line:#dde3ea; --chip:#f3f5f8; --card:#ffffff; --stage:#e7ebf1; --warn:#b4530a;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--stage);font-family:var(--sans);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .deck{width:min(96vw,1180px);aspect-ratio:16/9;position:relative}
+  .slide{position:absolute;inset:0;background:var(--card);border-radius:18px;
+    box-shadow:0 18px 50px rgba(20,30,50,.16);padding:52px 60px;display:none;
+    flex-direction:column;overflow:hidden}
+  .slide.active{display:flex}
+  .kicker{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 14px}
+  h1{font-size:46px;line-height:1.08;margin:0 0 18px;letter-spacing:-.02em}
+  h2{font-size:34px;line-height:1.14;margin:0 0 22px;letter-spacing:-.01em}
+  p,li{font-size:22px;line-height:1.55;color:var(--ink)}
+  .muted{color:var(--muted)}
+  ul{margin:6px 0 0;padding-left:22px}
+  li{margin:13px 0}
+  li b{color:var(--ink)}
+  .lead{font-size:25px;line-height:1.5;color:var(--muted);max-width:62ch}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:start}
+  .fill{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .center{align-items:center;text-align:center;justify-content:center}
+  .chip{display:inline-block;background:var(--chip);border:1px solid var(--line);
+    border-radius:999px;padding:5px 14px;font-size:15px;font-weight:600;margin:4px 6px 4px 0}
+  code,.mono{font-family:var(--mono);background:var(--chip);border:1px solid var(--line);
+    border-radius:6px;padding:1px 7px;font-size:.92em}
+  .callout{border-left:4px solid var(--accent);background:#f5f5ff;border-radius:0 10px 10px 0;
+    padding:16px 20px;font-size:20px;margin-top:10px}
+  .warn{border-left-color:var(--warn);background:#fff6ee}
+  .ok{border-left-color:var(--accent2);background:#eefaf7}
+  .big{font-size:30px;font-weight:700;letter-spacing:-.01em}
+  .accent{color:var(--accent)} .accent2{color:var(--accent2)} .warnc{color:var(--warn)}
+  svg{width:100%;height:auto;display:block}
+  .footer{position:absolute;left:60px;right:60px;bottom:18px;display:flex;
+    justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+  .footer .pageno{font-variant-numeric:tabular-nums}
+  .bar{position:absolute;left:0;bottom:0;height:4px;background:var(--accent);
+    border-radius:0 0 0 18px;transition:width .25s ease}
+  .nav{position:fixed;bottom:14px;right:18px;display:flex;gap:8px;z-index:10}
+  .nav button{font-family:var(--sans);font-size:15px;border:1px solid var(--line);
+    background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;color:var(--ink)}
+  .nav button:hover{background:var(--chip)}
+  .title-wrap{display:flex;flex-direction:column;justify-content:center;height:100%}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
+  .pcard{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .pcard h3{margin:0 0 6px;font-size:20px}
+  .pcard .who{font-size:14px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em}
+  .small{font-size:18px}
+  .rank{display:flex;align-items:center;gap:12px;padding:7px 14px;border:1px solid var(--line);
+    border-radius:9px;margin:6px 0;font-size:18px;background:#fff}
+  .rank .n{font-family:var(--mono);font-weight:700;color:var(--muted);width:26px}
+  .rank.bad{background:#fff6f4;border-color:#f0cfc6}
+  .rank.good{background:#eefaf7;border-color:#bfe6dd}
+  .rank .tag{margin-left:auto;font-size:15px;font-weight:700}
+  .rank.bad .tag{color:var(--warn)} .rank.good .tag{color:var(--accent2)}
+  /* Lightweight hover tooltip — any element (HTML or SVG) with a data-tip attribute. */
+  [data-tip]{cursor:help}
+  .tip-pop{position:fixed;z-index:50;max-width:330px;background:var(--ink);color:#fff;
+    font-size:14px;line-height:1.45;padding:10px 13px;border-radius:9px;pointer-events:none;
+    box-shadow:0 8px 24px rgba(20,30,50,.28);opacity:0;transform:translateY(4px);
+    transition:opacity .12s ease,transform .12s ease}
+  .tip-pop.show{opacity:1;transform:translateY(0)}
+  @media print{
+    body{display:block;background:#fff;overflow:visible}
+    .deck{width:100%;aspect-ratio:auto}
+    .slide{display:flex;position:relative;page-break-after:always;box-shadow:none;
+      border:1px solid var(--line);margin-bottom:18px;height:90vh}
+    .nav{display:none}
+    .tip-pop{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide active">
+    <div class="title-wrap">
+      <p class="kicker">Build-along course · Lesson 103 of 8</p>
+      <h1>RAG 103<br>Embeddings + the vector store</h1>
+      <p class="lead">What an embedding actually <i>is</i>, why "near" means an angle on a sphere, what a vector DB really does — and swapping the dumb embedder for a real one to fix those wrong neighbors.</p>
+      <p class="muted small" style="margin-top:26px">the-stacks v2 · a D&amp;D corpus RAG · scan solo or follow along live</p>
+    </div>
+    <div class="footer"><span>RAG 103</span><span>↦ arrow keys / space to advance</span></div>
+  </section>
+
+  <!-- 2 THE MOTIVATOR -->
+  <section class="slide">
+    <p class="kicker">Where we are</p>
+    <h2>Clean chunks, still-wrong neighbors — that's an embedding bug</h2>
+    <div class="two fill">
+      <div>
+        <p class="small muted" style="margin:0 0 6px">query: "what environment do goblins live in?" — after 102</p>
+        <div class="rank good"><span class="n">1</span> Goblins — "lair in caves…" <span class="tag">✓</span></div>
+        <div class="rank bad"><span class="n">2</span> Grimlock <span class="tag">✕</span></div>
+        <div class="rank bad"><span class="n">3</span> Gith <span class="tag">✕</span></div>
+        <p class="small muted" style="margin-top:8px">Content is clean (102 fixed that). The <i>ranking</i> of neighbors is still wrong. MRR ≈ 0.33.</p>
+      </div>
+      <div>
+        <div class="callout warn"><b>The culprit:</b> the 101 <code>HashingEmbedder</code> — bag-of-words hashing into 256 buckets. It keys on <b>token identity</b>, not meaning.</div>
+        <ul class="small">
+          <li><b>Synonym blindness</b> — "home" / "lair" / "den" land in unrelated buckets.</li>
+          <li><b>Stop-word pollution</b> — shared boilerplate pulls unrelated monsters close.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer"><span>RAG 103 · The motivator</span><span></span></div>
+  </section>
+
+  <!-- 3 WHAT IS AN EMBEDDING -->
+  <section class="slide">
+    <p class="kicker">The core idea</p>
+    <h2>An embedding is a <i>point in meaning space</i>, not a string</h2>
+    <div class="fill">
+      <svg viewBox="0 0 980 230" role="img" aria-label="Text becomes a vector of numbers, a point in meaning space">
+        <rect x="10" y="86" width="180" height="58" rx="10" fill="#f3f5f8" stroke="#dde3ea"/>
+        <text x="100" y="112" text-anchor="middle" font-size="15" fill="#1b2733">"Goblins lair</text>
+        <text x="100" y="132" text-anchor="middle" font-size="15" fill="#1b2733">in caves…"</text>
+        <rect x="232" y="86" width="150" height="58" rx="10" fill="#eef0ff" stroke="#4f46e5" stroke-width="1.4"/>
+        <text x="307" y="120" text-anchor="middle" font-size="16" font-weight="700" fill="#4f46e5">embedder</text>
+        <rect x="424" y="86" width="300" height="58" rx="10" fill="#fff" stroke="#1b2733" stroke-width="1.3"/>
+        <text x="574" y="112" text-anchor="middle" font-size="15" font-family="ui-monospace,Menlo,monospace" fill="#0e9488">[0.21, −0.83, 0.05, …]</text>
+        <text x="574" y="133" text-anchor="middle" font-size="12.5" fill="#5a6776">fixed length = dim (768)</text>
+        <line x1="190" y1="115" x2="232" y2="115" stroke="#5a6776" stroke-width="2" marker-end="url(#e1)"/>
+        <line x1="382" y1="115" x2="424" y2="115" stroke="#5a6776" stroke-width="2" marker-end="url(#e1)"/>
+        <line x1="724" y1="115" x2="766" y2="115" stroke="#5a6776" stroke-width="2" marker-end="url(#e1)"/>
+        <circle cx="838" cy="86" r="6" fill="#0e9488"/><text x="852" y="83" font-size="13" fill="#5a6776">Goblin Boss</text>
+        <circle cx="812" cy="120" r="8" fill="#1b2733"/><text x="826" y="124" font-size="13" fill="#1b2733">★ query</text>
+        <circle cx="864" cy="150" r="6" fill="#0e9488"/><text x="878" y="154" font-size="13" fill="#5a6776">Hobgoblin</text>
+        <circle cx="930" cy="196" r="6" fill="#5a6776"/><text x="836" y="214" font-size="12.5" fill="#5a6776">Grimlock (far)</text>
+        <circle cx="838" cy="120" r="62" fill="none" stroke="#0e9488" stroke-width="1.3" stroke-dasharray="5 4"/>
+        <defs><marker id="e1" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#5a6776"/></marker></defs>
+      </svg>
+      <div class="callout" style="margin-top:18px">Same model embeds the query and every chunk. "Retrieve" = <b>find the nearest points</b>. Near in space ⇒ near in meaning — <i>if</i> the model learned meaning.</div>
+    </div>
+    <div class="footer"><span>RAG 103 · What an embedding is</span><span></span></div>
+  </section>
+
+  <!-- 4 HASHING VS LEARNED -->
+  <section class="slide">
+    <p class="kicker">Why a real model, not a bigger dumb one</p>
+    <h2>A dimension only helps if it <i>means</i> something</h2>
+    <div class="two fill">
+      <div>
+        <p class="big warnc" style="margin-bottom:6px">Hashing (dumb)</p>
+        <p class="small">Each dim = an arbitrary bucket words hash into. "home" → bucket 88, "lair" → bucket 203. <b>Synonyms scatter.</b> More buckets (256→4096) just spreads them further — capacity isn't comprehension.</p>
+      </div>
+      <div>
+        <p class="big accent2" style="margin-bottom:6px">Learned (real)</p>
+        <p class="small">Each dim = an abstract feature shaped by training. "home" and "lair" land almost on top of each other. <b>Coordinates encode meaning.</b> The win is meaningful axes, not more axes.</p>
+      </div>
+    </div>
+    <div class="callout ok" style="margin-top:4px">102 → 103 is "256 dumb dims → 768 <i>learned</i> dims." The jump is the <i>meaning</i>, not the count.</div>
+    <div class="footer"><span>RAG 103 · Hashing vs learned</span><span></span></div>
+  </section>
+
+  <!-- 5 COSINE / UNIT SPHERE -->
+  <section class="slide">
+    <p class="kicker">Measuring "near"</p>
+    <h2>Cosine compares the <i>angle</i> — normalize, and length stops mattering</h2>
+    <div class="two fill">
+      <div>
+        <svg viewBox="0 0 380 300" role="img" aria-label="Unit circle with vectors of equal length, different direction">
+          <line x1="40" y1="170" x2="320" y2="170" stroke="#dde3ea" stroke-width="1"/>
+          <line x1="180" y1="40" x2="180" y2="290" stroke="#dde3ea" stroke-width="1"/>
+          <circle cx="180" cy="170" r="110" fill="none" stroke="#dde3ea" stroke-width="1.4" stroke-dasharray="4 4"/>
+          <line x1="180" y1="170" x2="246" y2="82" stroke="#0e9488" stroke-width="2.5" marker-end="url(#c1)"/>
+          <line x1="180" y1="170" x2="268" y2="104" stroke="#0e9488" stroke-width="2.5" marker-end="url(#c1)"/>
+          <line x1="180" y1="170" x2="100" y2="94" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#c1)"/>
+          <path d="M 230 130 A 50 50 0 0 1 247 110" fill="none" stroke="#1b2733" stroke-width="1.5"/>
+          <text x="250" y="128" font-size="13" fill="#1b2733">θ</text>
+          <text x="150" y="225" text-anchor="middle" font-size="13" fill="#5a6776">all length 1 → on the circle</text>
+          <defs><marker id="c1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#5a6776"/></marker></defs>
+        </svg>
+      </div>
+      <div>
+        <p>Raw <span data-tip="L2 / Euclidean distance: the straight-line gap between two vector tips. Sensitive to vector length — so a long, wordy chunk (bigger-magnitude vector) looks 'far' even when it's on-topic.">L2 distance&#160;<span style="display:inline-block;background:#4f46e5;color:#fff;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;font-size:13px;font-weight:700">?</span></span> is fooled by length: a long on-topic chunk has a big-magnitude vector and ranks too low.</p>
+        <div class="callout"><b>Cosine</b> = angle only, ignores magnitude. <b>Normalize</b> every vector to length 1 (÷ its own length) and they all sit on the unit sphere — where L2 ranking == cosine ranking.</div>
+        <p class="small muted" style="margin-top:10px">So a chunk isn't penalized for being wordy. Direction (meaning) decides, not size.</p>
+      </div>
+    </div>
+    <div class="footer"><span>RAG 103 · Cosine &amp; the unit sphere</span><span></span></div>
+  </section>
+
+  <!-- 6 VECTOR STORE / ANN -->
+  <section class="slide">
+    <p class="kicker">What a vector DB actually does</p>
+    <h2>Brute-force is exact; ANN trades recall for speed</h2>
+    <div class="two fill">
+      <div>
+        <div class="callout"><b>Brute force:</b> compare the query to <i>every</i> vector, sort, take top-K. Always correct, but <b>O(N)</b> per query.</div>
+        <div class="callout ok"><b>ANN</b> <span data-tip="Approximate Nearest Neighbor: indexes built at ingest (HNSW navigable graph, or IVF clusters) that only check a small neighborhood of candidates instead of every vector. Much faster, but may miss the true nearest — a recall/latency dial.">(HNSW / IVF)&#160;<span style="display:inline-block;background:#0e9488;color:#fff;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;font-size:13px;font-weight:700">?</span></span><b>:</b> prebuilt index, checks a small neighborhood. Fast, but may miss the true nearest — a <b>recall ⇄ latency</b> dial.</div>
+      </div>
+      <div>
+        <p><b>Our choice:</b> <code>sqlite-vec</code> does <b>exact brute-force KNN</b> — no ANN index. At 48 chunks (and a full DDB import) that's the right call: exact, zero tuning, simpler.</p>
+        <p class="small muted" style="margin-top:8px">Approximate is fine in RAG anyway — we over-fetch top-K and a reranker (105) trims it. ANN only earns its keep at large N with a tight latency budget. The <code>Store</code> seam stays swappable if we outgrow it.</p>
+      </div>
+    </div>
+    <div class="footer"><span>RAG 103 · Brute force vs ANN</span><span></span></div>
+  </section>
+
+  <!-- 7 DERIVED CACHE / RE-INGEST -->
+  <section class="slide">
+    <p class="kicker">A constraint with teeth</p>
+    <h2>Vectors are a derived cache — change the model, re-ingest everything</h2>
+    <div class="two fill">
+      <div>
+        <p>The store's vector column is fixed-width (<code>float[768]</code>). You can't compare a 768-dim query to 256-dim stored vectors — the math is component-wise, and two <i>different</i> models have unrelated coordinate systems anyway.</p>
+        <div class="callout"><b>So <code>dim</code> is one-way per DB.</b> Vectors = a function of (corpus + model version). Upgrade the model ⇒ invalidate the cache ⇒ re-embed from source. No migration path.</div>
+      </div>
+      <div>
+        <div class="callout warn"><b>The build hit this live.</b> A leftover 256-dim DB + <code>CREATE TABLE IF NOT EXISTS</code> silently kept the old dim → the 768-dim insert died with an opaque <span class="mono small">Dimension mismatch</span> mid-transaction.</div>
+        <div class="callout ok"><b>Fix (fail loud):</b> <code>store.init()</code> now reads the existing dim and throws a clear "wipe + re-ingest" message <i>before</i> any work — <b>not</b> an auto-wipe (never silently delete the user's data).</div>
+      </div>
+    </div>
+    <div class="footer"><span>RAG 103 · Derived cache</span><span></span></div>
+  </section>
+
+  <!-- 8 LOCAL VIA OLLAMA -->
+  <section class="slide">
+    <p class="kicker">Where the model runs</p>
+    <h2>Local via Ollama — what we gain, what we give up</h2>
+    <div class="fill">
+      <div class="grid3">
+        <div class="pcard"><div class="who" style="color:#0e9488">Gain</div><h3>Cost &amp; privacy</h3><p class="small">No per-call fees; the corpus never leaves the machine (DDB copyright + the Neumo rule). $0 vs a $500-overnight cloud bill.</p></div>
+        <div class="pcard"><div class="who" style="color:#0e9488">Gain</div><h3>Repeatability</h3><p class="small">Pin the model → stable vectors. A hosted model being deprecated would silently force a full re-ingest.</p></div>
+        <div class="pcard"><div class="who warnc" style="color:#b4530a">Give up</div><h3>Quality ceiling</h3><p class="small">Top hosted models out-rank small local ones; plus you run the ops. Benchmark hosted before a quality-critical prod.</p></div>
+      </div>
+      <div class="callout" style="margin-top:18px"><code>nomic-embed-text</code>, 768-dim, served at <code>localhost:11434</code>. Easy win at our scale: free, private, repeatable, fast enough.</div>
+    </div>
+    <div class="footer"><span>RAG 103 · Local embeddings</span><span></span></div>
+  </section>
+
+  <!-- 9 THE PAYOFF (LIVE) -->
+  <section class="slide">
+    <p class="kicker accent2">Measured live — same query, same chunks, only the embedder changed</p>
+    <h2>MRR 0.33 → 1.0: Goblins to #1, the offenders gone</h2>
+    <div class="two fill">
+      <div>
+        <p class="small muted" style="margin:0 0 6px">dense top results (score = 1/(1+L2))</p>
+        <div class="rank good"><span class="n">1</span> Goblins — 0.586 <span class="tag">✓</span></div>
+        <div class="rank"><span class="n">2</span> Deep Gnome — 0.536 <span class="tag muted">intruder</span></div>
+        <div class="rank good"><span class="n">3</span> Goblin Boss — 0.533 <span class="tag">✓</span></div>
+        <div class="rank good"><span class="n">4</span> Goblin — 0.532 <span class="tag">✓</span></div>
+        <p class="small muted" style="margin-top:8px">Grimlock &amp; Gith fell out of the top 12 entirely.</p>
+      </div>
+      <div>
+        <div class="callout ok"><b>Prediction confirmed:</b> real embeddings fixed the <i>neighbors</i>. First relevant moved rank 3 → 1, so MRR = 1.0.</div>
+        <div class="callout"><b>Scores are compressed (0.52–0.59)</b> — a homogeneous 48-monster corpus on the unit sphere. <b>Ordering</b> carries the signal, not the gaps: live proof that direction, not magnitude, does the work.</div>
+      </div>
+    </div>
+    <div class="footer"><span>RAG 103 · The payoff</span><span></span></div>
+  </section>
+
+  <!-- 10 SURVIVING INTRUDER → 104 -->
+  <section class="slide">
+    <p class="kicker">What real embeddings <i>don't</i> fix</p>
+    <h2>The surviving intruder is honest — and it's 104's job</h2>
+    <div class="two fill">
+      <div>
+        <p>#2 <b>Deep Gnome</b> ("svirfneblin… deep underground") and the Giants cluster all carry cave/underground semantics. A <i>habitat</i> query genuinely resembles every "lives underground" monster.</p>
+        <div class="callout ok"><b>That's the synonym win working</b>, not a bug. Semantic search did exactly its job.</div>
+      </div>
+      <div>
+        <div class="callout warn"><b>But the literal token <i>goblin</i></b> would pull goblin chunks decisively. Meaning-similarity can't out-rank an exact identifier on its own.</div>
+        <p class="small muted" style="margin-top:10px">This is the <b>lexical/identifier gap</b> — the concrete, observed motivation for <b>104: hybrid retrieval</b> (dense + sparse/BM25, fused). These exact ranks are 104's "before."</p>
+      </div>
+    </div>
+    <div class="footer"><span>RAG 103 · The 104 hook</span><span></span></div>
+  </section>
+
+  <!-- 11 TAKEAWAYS -->
+  <section class="slide">
+    <p class="kicker">Key takeaways</p>
+    <h2>What to walk away with</h2>
+    <div class="fill">
+      <ul>
+        <li><b>An embedding is a point in meaning space</b> — a learned model puts synonyms near each other; hashing can't.</li>
+        <li><b>Normalize, then cosine</b> — angle = meaning; length shouldn't decide. On the unit sphere, L2 == cosine.</li>
+        <li><b>A vector DB does (A)NN search</b> — brute-force is exact and right at our scale; ANN is a recall/latency dial for later.</li>
+        <li><b>Vectors are a derived cache</b> — change the model/dim ⇒ full re-ingest; the build made that a fail-loud guard, not a footnote.</li>
+        <li><b>Verified:</b> MRR 0.33 → 1.0, neighbors fixed. The one honest intruder is the lexical gap → 104.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>RAG 103 · Takeaways</span><span></span></div>
+  </section>
+
+  <!-- 12 NEXT -->
+  <section class="slide center">
+    <p class="kicker">Up next</p>
+    <h1>RAG 104</h1>
+    <p class="lead">Retrieval: dense vs sparse vs hybrid. Dense fixed the neighbors but still misses exact identifiers — so we add BM25 alongside it and fuse the rankings (RRF), using the Deep Gnome intruder as the concrete "before."</p>
+    <div class="footer"><span>RAG 103 · fin</span><span></span></div>
+  </section>
+
+  <div class="bar" id="bar"></div>
+</div>
+
+<div class="nav">
+  <button onclick="go(-1)">‹ Prev</button>
+  <button onclick="go(1)">Next ›</button>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  const bar=document.getElementById('bar');
+  // Slide numbers: write "n / total" into each slide's footer right span (skip the title).
+  slides.forEach((s,k)=>{
+    const right=s.querySelector('.footer span:last-child');
+    if(right && k>0){ right.classList.add('pageno'); right.textContent=(k+1)+' / '+slides.length; }
+  });
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+  }
+  function go(d){show(i+d)}
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){show(0)} else if(e.key==='End'){show(slides.length-1)}
+  });
+  show(0);
+
+  // Lightweight tooltip: styled popover for any [data-tip] element (works on SVG too).
+  (function(){
+    const pop=document.createElement('div'); pop.className='tip-pop'; document.body.appendChild(pop);
+    const place=e=>{ const pad=14, r=pop.getBoundingClientRect();
+      let x=e.clientX+pad, y=e.clientY+pad;
+      if(x+r.width>innerWidth-8) x=e.clientX-r.width-pad;
+      if(y+r.height>innerHeight-8) y=e.clientY-r.height-pad;
+      pop.style.left=x+'px'; pop.style.top=y+'px'; };
+    document.addEventListener('mouseover',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]');
+      if(!t) return; pop.textContent=t.getAttribute('data-tip'); pop.classList.add('show'); place(e); });
+    document.addEventListener('mousemove',e=>{ if(pop.classList.contains('show')) place(e); });
+    document.addEventListener('mouseout',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]');
+      if(t && !t.contains(e.relatedTarget)) pop.classList.remove('show'); });
+  })();
+</script>
+</body>
+</html>

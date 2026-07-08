@@ -1,0 +1,30 @@
+{
+  // -------------------------------------------------------------------------
+  // Strict, modern TypeScript config for the MCP 103 demo.
+  // NodeNext module resolution is what the official MCP SDK + LangChain expect.
+  // -------------------------------------------------------------------------
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "types": ["node"],
+
+    // Strictness — we WANT the compiler to be paranoid. The whole point of the
+    // demo is that types carry security-relevant information (e.g. Tainted<T>).
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": false,
+
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

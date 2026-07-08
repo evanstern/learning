@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Web UI",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "web"],
+      "port": 3103
+    },
+    {
+      "name": "Demo CLI",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "demo"],
+      "port": 0
+    },
+    {
+      "name": "MCP Server (stdio)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "mcp"],
+      "port": 0
+    }
+  ]
+}

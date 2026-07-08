@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>101 · Home Lab AI Hub</title>
+<style>
+  :root{
+    --ink:#1b2733; --muted:#5a6776; --accent:#4f46e5; --accent2:#0e9488;
+    --line:#dde3ea; --chip:#f3f5f8; --card:#ffffff; --stage:#e7ebf1; --warn:#b4530a;
+    --codebg:#1e2636; --codefg:#cdd6f4;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--stage);font-family:var(--sans);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .deck{width:min(97vw,1320px);aspect-ratio:16/9;position:relative}
+  .slide{position:absolute;inset:0;background:var(--card);border-radius:18px;
+    box-shadow:0 18px 50px rgba(20,30,50,.16);padding:40px 52px 56px;display:none;
+    flex-direction:column;overflow:hidden}
+  .slide.active{display:flex}
+  .kicker{font-size:17px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 14px}
+  h1{font-size:66px;line-height:1.05;margin:0 0 20px;letter-spacing:-.02em}
+  h2{font-size:48px;line-height:1.12;margin:0 0 22px;letter-spacing:-.01em}
+  p,li{font-size:30px;line-height:1.45;color:var(--ink)}
+  .muted{color:var(--muted)}
+  ul{margin:8px 0 0;padding-left:28px}
+  li{margin:20px 0}
+  .lead{font-size:36px;line-height:1.4;color:var(--muted);max-width:34ch}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:start}
+  .fill{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+  .center{align-items:center;text-align:center;justify-content:center}
+  .chip{display:inline-block;background:var(--chip);border:1px solid var(--line);
+    border-radius:999px;padding:7px 18px;font-size:20px;font-weight:600;margin:5px 7px 5px 0}
+  code,.mono{font-family:var(--mono);background:var(--chip);border:1px solid var(--line);
+    border-radius:6px;padding:2px 9px;font-size:.92em}
+  .callout{border-left:5px solid var(--accent);background:#f5f5ff;border-radius:0 12px 12px 0;
+    padding:20px 26px;font-size:28px;margin-top:14px}
+  .warn{border-left-color:var(--warn);background:#fff6ee}
+  .ok{border-left-color:var(--accent2);background:#eefaf7}
+  .accent{color:var(--accent)} .accent2{color:var(--accent2)} .warnc{color:var(--warn)}
+  svg{width:100%;height:auto;display:block}
+  .figure{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+  .figure svg{max-height:100%}
+  .translation{flex:1;display:grid;grid-template-columns:1fr 1fr;border-radius:14px;
+    overflow:hidden;box-shadow:0 10px 30px rgba(20,30,50,.14);min-height:0}
+  .t-label{font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    opacity:.6;margin:0 0 12px}
+  .t-code{background:var(--codebg);color:var(--codefg);padding:26px 30px;overflow:auto}
+  .t-code pre{margin:0;font-family:var(--mono);font-size:22px;line-height:1.6;
+    white-space:pre-wrap;word-break:break-word;color:var(--codefg)}
+  .t-english{background:var(--chip);padding:26px 30px;border-left:4px solid var(--accent);
+    overflow:auto}
+  .t-english p{font-size:22px;line-height:1.55;margin:0 0 14px}
+  .t-english p:last-child{margin-bottom:0}
+  .colhead{font-size:22px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    margin:0 0 12px}
+  .footer{position:absolute;left:52px;right:52px;bottom:16px;display:flex;
+    justify-content:space-between;align-items:center;font-size:16px;color:var(--muted)}
+  .footer .pageno{font-variant-numeric:tabular-nums}
+  .bar{position:absolute;left:0;bottom:0;height:5px;background:var(--accent);
+    border-radius:0 0 0 18px;transition:width .25s ease}
+  .nav{position:fixed;bottom:14px;right:18px;display:flex;gap:8px;z-index:10}
+  .nav button{font-family:var(--sans);font-size:17px;border:1px solid var(--line);
+    background:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;color:var(--ink)}
+  .nav button:hover{background:var(--chip)}
+  .title-wrap{display:flex;flex-direction:column;justify-content:center;height:100%}
+  .small{font-size:24px}
+  [data-tip]{cursor:help}
+  .tip-pop{position:fixed;z-index:50;max-width:420px;background:var(--ink);color:#fff;
+    font-size:19px;line-height:1.4;padding:13px 17px;border-radius:10px;pointer-events:none;
+    box-shadow:0 8px 24px rgba(20,30,50,.28);opacity:0;transform:translateY(4px);
+    transition:opacity .12s ease,transform .12s ease}
+  .tip-pop.show{opacity:1;transform:translateY(0)}
+  .qbadge{display:inline-block;background:var(--accent2);color:#fff;border-radius:50%;
+    width:30px;height:30px;line-height:30px;text-align:center;font-size:19px;font-weight:700}
+  @media print{
+    body{display:block;background:#fff;overflow:visible}
+    .deck{width:100%;aspect-ratio:auto}
+    .slide{display:flex;position:relative;page-break-after:always;box-shadow:none;
+      border:1px solid var(--line);margin-bottom:18px;height:96vh}
+    .nav{display:none}
+    .tip-pop{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide active">
+    <div class="title-wrap">
+      <p class="kicker">Home Lab · Lesson 101</p>
+      <h1>The Home Lab AI Hub<br>Squeezing a Coding LLM Onto Hardware That Already Works</h1>
+      <p class="lead">How an 8GB GPU that's already doing hardware transcoding also ends up hosting a local coding assistant — without breaking either.</p>
+      <p class="muted small" style="margin-top:30px">real Proxmox box · real constraints · a design-decision walkthrough</p>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting</span><span>↦ arrow keys / space to advance</span></div>
+  </section>
+
+  <!-- 2 CONTENT: the real hardware -->
+  <section class="slide">
+    <p class="kicker">The real box</p>
+    <h2>What's actually in this Proxmox host</h2>
+    <div class="fill">
+      <ul>
+        <li><b>AMD Ryzen 7 7700</b> — 8 cores / 16 threads<br><span class="muted small">plenty of CPU headroom to spare</span></li>
+        <li><b>128GB DDR5 RAM</b><br><span class="muted small">but all 4 DIMM slots are already full</span></li>
+        <li><b>One RTX 4060 Ti</b> — <span data-tip="VRAM is memory built directly onto the graphics card, wired straight to its compute cores — you'd tell an AI 'this GPU has 8GB of VRAM' when describing what models can fit on it.">8GB VRAM<span class="qbadge" style="margin-left:6px">?</span></span><br><span class="muted small">confirmed by inspecting the card's memory address size — not assumed from the model name, since this chip ships in both an 8GB and a 16GB card</span></li>
+        <li><b>5 VMs already running</b><br><span class="muted small">Emby, downloads, an *arr media stack, a misc box, and one called "openclaw"</span></li>
+      </ul>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · the setup</span><span></span></div>
+  </section>
+
+  <!-- 3 DIAGRAM: GPU exclusivity -->
+  <section class="slide">
+    <p class="kicker">Show, don't tell</p>
+    <h2>The GPU already has an owner</h2>
+    <div class="figure">
+      <svg viewBox="0 0 800 320" role="img" aria-label="diagram showing the GPU passed through exclusively to the emby VM, with all other VMs blocked from access">
+        <rect x="300" y="20" width="200" height="70" rx="12" fill="#eef0ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="400" y="62" text-anchor="middle" font-size="24" font-family="sans-serif" fill="#1b2733">RTX 4060 Ti · 8GB</text>
+        <line x1="400" y1="90" x2="400" y2="145" stroke="#4f46e5" stroke-width="3" marker-end="url(#arrow)"/>
+        <text x="415" y="122" font-size="18" fill="#4f46e5" font-family="sans-serif">PCI passthrough (exclusive)</text>
+        <rect x="300" y="150" width="200" height="65" rx="12" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="400" y="188" text-anchor="middle" font-size="24" font-family="sans-serif" fill="#1b2733">emby VM</text>
+        <line x1="330" y1="215" x2="240" y2="255" stroke="#b4530a" stroke-width="2.5" stroke-dasharray="7,6"/>
+        <text x="150" y="248" font-size="26" fill="#b4530a" font-family="sans-serif">&#215;</text>
+        <rect x="120" y="255" width="560" height="55" rx="12" fill="#f3f5f8" stroke="#b4530a" stroke-width="2" stroke-dasharray="7,6"/>
+        <text x="400" y="289" text-anchor="middle" font-size="21" font-family="sans-serif" fill="#5a6776">downloads · arr-stack · misc · openclaw — no access</text>
+        <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="#4f46e5"/></marker></defs>
+      </svg>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · the constraint</span><span></span></div>
+  </section>
+
+  <!-- 4 CALLOUT: motivation -->
+  <section class="slide">
+    <p class="kicker">Why bother</p>
+    <h2>Learning-first, with room to grow</h2>
+    <div class="fill">
+      <div class="callout">"Primarily driven by wanting to learn the stack — not by needing the fastest tokens/sec today. Coding is today's job. This box might end up being the whole home lab's AI hub later."</div>
+      <p class="lead" style="margin-top:24px">That framing shapes every decision ahead: optimize for understanding the mechanics now, without painting the box into a corner for later.</p>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · motivation</span><span></span></div>
+  </section>
+
+  <!-- 5 CONTENT: three options -->
+  <section class="slide">
+    <p class="kicker">Three ways to unstick the GPU</p>
+    <h2>Who gets the 8GB card?</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Reclaim it</b><br><span class="muted small">take the GPU from Emby outright; Emby drops to CPU-only transcoding</span></li>
+        <li><b>Restructure the sharing</b><br><span class="muted small">move Emby off exclusive <span data-tip="Handing an entire physical device to one virtual machine — no other VM or the host itself can touch it while that VM owns it.">PCI passthrough<span class="qbadge" style="margin-left:4px;width:24px;height:24px;line-height:24px;font-size:15px">?</span></span> onto an <span data-tip="A container that shares the host's kernel instead of getting its own virtual hardware — multiple LXC containers can share access to the same device, like a GPU, at once.">LXC container<span class="qbadge" style="margin-left:4px;width:24px;height:24px;line-height:24px;font-size:15px">?</span></span>, which can share the GPU concurrently</span></li>
+        <li><b>Stay CPU-only for now</b><br><span class="muted small">skip the GPU fight entirely, run inference on the Ryzen's 8 cores instead</span></li>
+      </ul>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · the options</span><span></span></div>
+  </section>
+
+  <!-- 6 CALLOUT(ok): decision -->
+  <section class="slide">
+    <p class="kicker">The decision</p>
+    <h2>Restructure via LXC sharing</h2>
+    <div class="fill">
+      <div class="callout ok">Buys flexibility: Emby can eventually get its own small transcode card, and/or the 4060&nbsp;Ti gets replaced with something bigger — without undoing today's decision.</div>
+      <p class="lead" style="margin-top:24px">Real cost, not a free lunch: a full VM's passthrough is exclusive by design. Sharing the card means <b>Emby itself moves from a VM to an LXC container</b> — not just a config flag.</p>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · the decision</span><span></span></div>
+  </section>
+
+  <!-- 7 DIAGRAM: upgrade headroom -->
+  <section class="slide">
+    <p class="kicker">Checked before deciding, not assumed</p>
+    <h2>The room to grow was already there — just deferred</h2>
+    <div class="figure">
+      <svg viewBox="0 0 900 300" role="img" aria-label="diagram of the motherboard's PCIe slots and RAM slots showing available upgrade headroom">
+        <rect x="30" y="40" width="260" height="90" rx="12" fill="#eef0ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="160" y="75" text-anchor="middle" font-size="22" font-family="sans-serif" fill="#1b2733">PCIE1</text>
+        <text x="160" y="105" text-anchor="middle" font-size="18" font-family="sans-serif" fill="#5a6776">4060 Ti today · x8 electrical</text>
+        <rect x="320" y="40" width="260" height="90" rx="12" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="450" y="75" text-anchor="middle" font-size="22" font-family="sans-serif" fill="#1b2733">PCIE3 — free</text>
+        <text x="450" y="105" text-anchor="middle" font-size="18" font-family="sans-serif" fill="#5a6776">x4 electrical · future Emby card</text>
+        <rect x="610" y="40" width="260" height="90" rx="12" fill="#f3f5f8" stroke="#5a6776" stroke-width="2"/>
+        <text x="740" y="75" text-anchor="middle" font-size="22" font-family="sans-serif" fill="#1b2733">RAM: 4 / 4 slots full</text>
+        <text x="740" y="105" text-anchor="middle" font-size="18" font-family="sans-serif" fill="#5a6776">128GB → 192GB is swap-only</text>
+        <line x1="30" y1="170" x2="870" y2="170" stroke="#dde3ea" stroke-width="2"/>
+        <text x="450" y="220" text-anchor="middle" font-size="23" font-family="sans-serif" fill="#1b2733">Bigger GPU fits PCIE1; a small Emby card fits PCIE3</text>
+        <text x="450" y="252" text-anchor="middle" font-size="19" font-family="sans-serif" fill="#5a6776">RAM: 128&#8594;192GB needs a full 4&#215;48GB swap</text>
+        <text x="450" y="277" text-anchor="middle" font-size="19" font-family="sans-serif" fill="#5a6776">Deferred pending PSU wattage and case clearance</text>
+      </svg>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · upgrade path (deferred)</span><span></span></div>
+  </section>
+
+  <!-- 8 CONTENT: Ollama vs metal -->
+  <section class="slide">
+    <p class="kicker">Which engine</p>
+    <h2>Ollama, or closer to the metal?</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Ollama</b> — hides the mechanics<br><span class="muted small">dead simple, sane defaults, great if the goal is "just have a working assistant"</span></li>
+        <li><b>llama.cpp / vLLM</b> — closer to the metal<br><span class="muted small">more setup, but the knobs you're trying to learn stay visible instead of hidden</span></li>
+      </ul>
+      <div class="callout" style="margin-top:10px">Chosen: closer to the metal. The whole point was to <i>learn</i> the stack, not just end up with a working assistant.</div>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · engine, round 1</span><span></span></div>
+  </section>
+
+  <!-- 9 TWO-COL: llama.cpp vs vLLM -->
+  <section class="slide">
+    <p class="kicker">Two different philosophies</p>
+    <h2>llama.cpp vs. vLLM</h2>
+    <div class="two fill">
+      <div>
+        <p class="colhead accent">llama.cpp</p>
+        <ul>
+          <li>Flexible GPU/CPU split via <span data-tip="A setting that decides exactly how many of the model's layers run on the GPU versus spill to the CPU — you'd tell an AI 'set n_gpu_layers so the model fits in 8GB'.">n_gpu_layers<span class="qbadge" style="margin-left:4px;width:24px;height:24px;line-height:24px;font-size:15px">?</span></span></li>
+          <li>Uses <span data-tip="A quantized model file format llama.cpp reads — you'd tell an AI 'download the GGUF version of this model'.">GGUF<span class="qbadge" style="margin-left:4px;width:24px;height:24px;line-height:24px;font-size:15px">?</span></span> quantization</li>
+          <li>Built for <b>one user</b> on constrained, shared hardware</li>
+        </ul>
+      </div>
+      <div>
+        <p class="colhead accent2">vLLM</p>
+        <ul>
+          <li>Built around <span data-tip="A memory-management technique that lets a server handle many simultaneous requests without wasting VRAM to fragmentation — the reason vLLM is fast with lots of concurrent users.">PagedAttention<span class="qbadge" style="margin-left:4px;width:24px;height:24px;line-height:24px;font-size:15px">?</span></span> + continuous batching</li>
+          <li>Wants the model to fit <b>cleanly</b> in VRAM; weak at partial offload</li>
+          <li>Built for <b>many concurrent</b> requests hitting one model</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · engine, round 2</span><span></span></div>
+  </section>
+
+  <!-- 10 CALLOUT: decision -->
+  <section class="slide">
+    <p class="kicker">The decision</p>
+    <h2>llama.cpp, for now</h2>
+    <div class="fill">
+      <div class="callout">Today's constraints — 8GB, shared with Emby, one user — point straight at llama.cpp. The <i>future</i> "AI hub" vision is actually closer to what vLLM is built for.</div>
+      <p class="lead" style="margin-top:24px">Deliberately chose to optimize for learning-now over building-for-scale-later. Reversible later: it's a runtime swap, not an architecture commitment.</p>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · the decision</span><span></span></div>
+  </section>
+
+  <!-- 11 CONTENT chips: the stack -->
+  <section class="slide">
+    <p class="kicker">The stack, fully specified</p>
+    <h2>llama.cpp + Qwen3-7B + Q4_K_M</h2>
+    <div class="fill">
+      <div>
+        <span class="chip">llama.cpp</span><span class="chip">Qwen3-7B</span><span class="chip">Q4_K_M <span data-tip="A GGUF quantization level — how much a model's weights are compressed to save memory. Q4_K_M is a common 'balanced' setting; higher numbers (Q5, Q6) mean less compression and better quality, but more VRAM.">quantization<span class="qbadge" style="margin-left:4px;width:22px;height:22px;line-height:22px;font-size:13px">?</span></span></span>
+      </div>
+      <p class="lead" style="margin-top:26px">Qwen3-7B tops HumanEval in its class — chosen over the larger, higher-scoring Qwen3.5-9B specifically to leave headroom for Emby's transcoding on the same shared card. Q4_K_M keeps stacking that headroom rather than spending it on marginal quality.</p>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · the model</span><span></span></div>
+  </section>
+
+  <!-- 12 CHART: VRAM vs RAM bandwidth -->
+  <section class="slide">
+    <p class="kicker">Show the numbers</p>
+    <h2>Why VRAM wins on speed: ~5x the bandwidth</h2>
+    <div class="figure">
+      <svg viewBox="0 0 640 320" role="img" aria-label="bar chart comparing GDDR6 VRAM bandwidth at 288 gigabytes per second to DDR5 system RAM bandwidth at 57 gigabytes per second">
+        <line x1="60" y1="30" x2="60" y2="250" stroke="#dde3ea" stroke-width="2"/>
+        <line x1="60" y1="250" x2="600" y2="250" stroke="#dde3ea" stroke-width="2"/>
+        <line x1="60" y1="140" x2="600" y2="140" stroke="#dde3ea" stroke-width="1.5"/>
+        <rect x="150" y="60" width="110" height="190" fill="#4f46e5"/>
+        <rect x="390" y="212" width="110" height="38" fill="#0e9488"/>
+        <text x="205" y="50" text-anchor="middle" font-size="24" font-weight="700" fill="#1b2733">288 GB/s</text>
+        <text x="445" y="202" text-anchor="middle" font-size="24" font-weight="700" fill="#1b2733">57 GB/s</text>
+        <text x="205" y="278" text-anchor="middle" font-size="19" fill="#5a6776">RTX 4060 Ti</text>
+        <text x="205" y="301" text-anchor="middle" font-size="19" fill="#5a6776">GDDR6 VRAM</text>
+        <text x="445" y="278" text-anchor="middle" font-size="19" fill="#5a6776">DDR5-3600</text>
+        <text x="445" y="301" text-anchor="middle" font-size="19" fill="#5a6776">dual-channel RAM</text>
+      </svg>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · why VRAM matters</span><span></span></div>
+  </section>
+
+  <!-- 13 DIAGRAM: bandwidth-bound generation -->
+  <section class="slide">
+    <p class="kicker">The mechanism behind the number</p>
+    <h2>Tokens/sec &#8776; how fast you can move the weights</h2>
+    <div class="figure">
+      <svg viewBox="0 0 820 300" role="img" aria-label="diagram showing model weights streaming from VRAM to the GPU compute cores each token, contrasted with a slower path through system RAM and PCIe to the CPU">
+        <rect x="40" y="30" width="230" height="70" rx="12" fill="#eef0ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="155" y="70" text-anchor="middle" font-size="22" font-family="sans-serif" fill="#1b2733">Weights in VRAM</text>
+        <line x1="270" y1="65" x2="360" y2="65" stroke="#4f46e5" stroke-width="4" marker-end="url(#a2)"/>
+        <rect x="360" y="30" width="230" height="70" rx="12" fill="#f5f5ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="475" y="70" text-anchor="middle" font-size="22" font-family="sans-serif" fill="#1b2733">GPU compute cores</text>
+        <text x="475" y="115" text-anchor="middle" font-size="18" fill="#4f46e5" font-family="sans-serif">one full sweep, every token</text>
+
+        <rect x="40" y="180" width="230" height="70" rx="12" fill="#f3f5f8" stroke="#5a6776" stroke-width="2"/>
+        <text x="155" y="220" text-anchor="middle" font-size="22" font-family="sans-serif" fill="#1b2733">Weights in system RAM</text>
+        <line x1="270" y1="215" x2="360" y2="215" stroke="#5a6776" stroke-width="3" stroke-dasharray="6,6" marker-end="url(#a3)"/>
+        <text x="315" y="200" text-anchor="middle" font-size="16" fill="#5a6776" font-family="sans-serif">PCIe hop</text>
+        <rect x="360" y="180" width="230" height="70" rx="12" fill="#f3f5f8" stroke="#5a6776" stroke-width="2"/>
+        <text x="475" y="220" text-anchor="middle" font-size="22" font-family="sans-serif" fill="#1b2733">CPU compute</text>
+        <text x="475" y="265" text-anchor="middle" font-size="18" fill="#5a6776" font-family="sans-serif">~5x slower, plus the transfer</text>
+
+        <defs>
+          <marker id="a2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#4f46e5"/></marker>
+          <marker id="a3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#5a6776"/></marker>
+        </defs>
+      </svg>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · memory-bandwidth-bound</span><span></span></div>
+  </section>
+
+  <!-- 14 CALLOUTS (warn + ok): misconception + fix -->
+  <section class="slide">
+    <p class="kicker">What actually happens under contention</p>
+    <h2>No graceful fallback — and the fix</h2>
+    <div class="fill">
+      <div class="callout warn">Misconception: VRAM doesn't gracefully "spill" into system RAM at runtime. llama.cpp's GPU/CPU split is fixed at model load — running out of VRAM mid-generation (e.g. a long paste colliding with Emby's <span data-tip="The running memory of a conversation the model is generating — it grows as the context (the text fed to the model) grows.">KV cache<span class="qbadge" style="margin-left:4px;width:22px;height:22px;line-height:22px;font-size:13px">?</span></span>) is a <b>hard CUDA out-of-memory crash</b>, not a slowdown.</div>
+      <div class="callout ok" style="margin-top:18px">Fix: hard-cap the max context length so peak KV cache + model weights stay under ~7GB — enforced <i>inside llama.cpp itself</i>, since consumer GPUs have no OS-level VRAM partitioning to lean on.</div>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · edge case</span><span></span></div>
+  </section>
+
+  <!-- 15 TWO-COL: foreclosed vs open -->
+  <section class="slide">
+    <p class="kicker">What this locks in — and what it doesn't</p>
+    <h2>Foreclosed vs. open</h2>
+    <div class="two fill">
+      <div>
+        <p class="colhead warnc">Foreclosed (for now)</p>
+        <ul>
+          <li>Top-end reasoning on sprawling, multi-file tasks</li>
+          <li>Emby's own VRAM headroom — now shared, not exclusive</li>
+        </ul>
+      </div>
+      <div>
+        <p class="colhead accent2">Stays open</p>
+        <ul>
+          <li>Swapping models later is just a new GGUF file — no rearchitecting</li>
+          <li>The upgrade path (dedicated Emby card, bigger GPU) is completely untouched</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · the bigger picture</span><span></span></div>
+  </section>
+
+  <!-- 16 CONTENT: fits the existing pattern -->
+  <section class="slide">
+    <p class="kicker">Fits the pattern already in place</p>
+    <h2>One more isolated service, not a special case</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Every existing service already gets its own VM/LXC</b><br><span class="muted small">RAM and CPU capped per-service, specifically so one can't swamp another (downloads vs. Emby)</span></li>
+        <li><b>The new LLM LXC follows the exact same rule</b><br><span class="muted small">isolation isn't a new idea being introduced — it's the house style</span></li>
+        <li><b>RAM is already tight</b> — 160GB configured against 124GB physical<br><span class="muted small">being actively addressed via a broader VM cleanup, not ignored</span></li>
+        <li><b>More non-GPU services on deck</b><br><span class="muted small">Vaultwarden, Linkwarden, downloads, the *arr stack — none of them compete for the 8GB card</span></li>
+      </ul>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · the whole box</span><span></span></div>
+  </section>
+
+  <!-- 17 JARGON TOOLTIP -->
+  <section class="slide">
+    <p class="kicker">One term worth sitting with</p>
+    <h2>Hover <span data-tip="Shrinking a model's numbers down to lower precision so it takes less memory and runs faster, at some small cost to output quality. Q4 keeps more precision than Q2; Q8 keeps nearly all of it. You'd tell an AI 'use a Q4 quantized version of this model' when memory is tight.">quantization<span class="qbadge" style="margin-left:8px">?</span></span> for what that word actually means</h2>
+    <div class="fill">
+      <p class="lead">Every model/quant decision in this lesson — Qwen3-7B over Qwen3.5-9B, Q4_K_M over Q5_K_M — was the same trade made twice: <b>less precision, more headroom.</b></p>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · glossary</span><span></span></div>
+  </section>
+
+  <!-- 18 TAKEAWAYS -->
+  <section class="slide">
+    <p class="kicker">Key takeaways</p>
+    <h2>What to walk away with</h2>
+    <div class="fill">
+      <ul>
+        <li>The real constraint was never "does the hardware exist" — it was <b>who gets the GPU</b>.</li>
+        <li>Every design choice here traded peak performance for <b>headroom and reversibility</b> — a deliberate pattern, not indecision.</li>
+        <li>VRAM beats RAM on speed because of <b>bandwidth</b>, not because RAM is broken — and that same fact explains why running out of it fails hard, not gracefully.</li>
+        <li>Deferring the hardware upgrade didn't close it off — the mechanical room to grow was checked and confirmed <i>before</i> parking it.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · takeaways</span><span></span></div>
+  </section>
+
+  <!-- 19 NEXT / open threads -->
+  <section class="slide center">
+    <p class="kicker">Still open</p>
+    <h2>What's next</h2>
+    <div class="fill" style="text-align:left;max-width:56ch;margin:0 auto">
+      <ul>
+        <li>What the <code>openclaw</code> VM is actually running</li>
+        <li>Emby VM &#8594; LXC migration, step by step</li>
+        <li>The exact context-length number for the ~7GB cap</li>
+        <li>Resume the upgrade path once PSU wattage/connectors and case clearance are known</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Home Lab LLM Hosting · fin</span><span></span></div>
+  </section>
+
+  <div class="bar" id="bar"></div>
+</div>
+
+<div class="nav">
+  <button onclick="go(-1)">‹ Prev</button>
+  <button onclick="go(1)">Next ›</button>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  const bar=document.getElementById('bar');
+  slides.forEach((s,k)=>{
+    const right=s.querySelector('.footer span:last-child');
+    if(right && k>0){ right.classList.add('pageno'); right.textContent=(k+1)+' / '+slides.length; }
+  });
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+  }
+  function go(d){show(i+d)}
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){show(0)} else if(e.key==='End'){show(slides.length-1)}
+  });
+  show(0);
+
+  (function(){
+    const pop=document.createElement('div'); pop.className='tip-pop'; document.body.appendChild(pop);
+    const place=e=>{ const pad=14, r=pop.getBoundingClientRect();
+      let x=e.clientX+pad, y=e.clientY+pad;
+      if(x+r.width>innerWidth-8) x=e.clientX-r.width-pad;
+      if(y+r.height>innerHeight-8) y=e.clientY-r.height-pad;
+      pop.style.left=x+'px'; pop.style.top=y+'px'; };
+    document.addEventListener('mouseover',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]');
+      if(!t) return; pop.textContent=t.getAttribute('data-tip'); pop.classList.add('show'); place(e); });
+    document.addEventListener('mousemove',e=>{ if(pop.classList.contains('show')) place(e); });
+    document.addEventListener('mouseout',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]');
+      if(t && !t.contains(e.relatedTarget)) pop.classList.remove('show'); });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "servers": [
+    {
+      "name": "support-crm",
+      "namespace": "support",
+      "command": "tsx",
+      "args": ["src/servers/support-crm/server.ts"],
+      "tools": ["get_ticket", "get_customer"]
+    },
+    {
+      "name": "billing",
+      "namespace": "billing",
+      "command": "tsx",
+      "args": ["src/servers/billing/server.ts"],
+      "tools": ["get_order", "issue_refund"]
+    }
+  ]
+}

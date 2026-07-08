@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP 104 — Gateway &amp; Mesh Operations</title>
+<style>
+  :root{
+    --ink:#1b2733; --muted:#5a6776; --accent:#4f46e5; --accent2:#0e9488;
+    --line:#dde3ea; --chip:#f3f5f8; --card:#ffffff; --stage:#e7ebf1; --warn:#b4530a; --danger:#b42318;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box} html,body{margin:0;height:100%}
+  body{background:var(--stage);font-family:var(--sans);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .deck{width:min(96vw,1180px);aspect-ratio:16/9;position:relative}
+  .slide{position:absolute;inset:0;background:var(--card);border-radius:18px;
+    box-shadow:0 18px 50px rgba(20,30,50,.16);padding:50px 58px;display:none;flex-direction:column;overflow:hidden}
+  .slide.active{display:flex}
+  .kicker{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+  .kicker.d{color:var(--danger)}
+  h1{font-size:44px;line-height:1.08;margin:0 0 18px;letter-spacing:-.02em}
+  h2{font-size:30px;line-height:1.14;margin:0 0 18px;letter-spacing:-.01em}
+  p,li{font-size:19px;line-height:1.46} .muted{color:var(--muted)}
+  ul{margin:6px 0 0;padding-left:22px} li{margin:9px 0}
+  .lead{font-size:22px;color:var(--muted);max-width:64ch}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:start}
+  .fill{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .center{align-items:center;text-align:center;justify-content:center}
+  code,.mono{font-family:var(--mono);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:.9em}
+  .callout{border-left:4px solid var(--accent);background:#f5f5ff;border-radius:0 10px 10px 0;padding:15px 19px;font-size:18px;margin-top:10px}
+  .callout.ok{border-left-color:var(--accent2);background:#f0faf8}
+  .callout.danger{border-left-color:var(--danger);background:#fdf3f2}
+  .callout.warn{border-left-color:var(--warn);background:#fff6ee}
+  .accent{color:var(--accent)} .accent2{color:var(--accent2)} .dangerc{color:var(--danger)}
+  svg{width:100%;height:auto;display:block}
+  .footer{position:absolute;left:58px;right:58px;bottom:16px;display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+  .bar{position:absolute;left:0;bottom:0;height:4px;background:var(--accent);border-radius:0 0 0 18px;transition:width .25s ease}
+  .nav{position:fixed;bottom:14px;right:18px;display:flex;gap:8px;z-index:10}
+  .nav button{font-family:var(--sans);font-size:15px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;color:var(--ink)}
+  .nav button:hover{background:var(--chip)}
+  .title-wrap{display:flex;flex-direction:column;justify-content:center;height:100%}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:6px}
+  .pcard{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .pcard h3{margin:0 0 6px;font-size:19px} .pcard .who{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em}
+  .small{font-size:16px} .xs{font-size:14px}
+  @media print{body{display:block;background:#fff;overflow:visible}.deck{width:100%;aspect-ratio:auto}.slide{display:flex;position:relative;page-break-after:always;box-shadow:none;border:1px solid var(--line);margin-bottom:18px;height:90vh}.nav{display:none}}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide active">
+    <div class="title-wrap">
+      <p class="kicker">A practical primer · Part 4 of 4 · operations</p>
+      <h1>MCP 104<br>Gateway &amp; Mesh Operations</h1>
+      <p class="lead">Running a mesh of many MCP servers is a distributed-systems and org problem, not a protocol one. Here's how to operate it: granularity, availability, router quality, ownership, and when not to build it at all.</p>
+      <p class="muted small" style="margin-top:22px">Throughline: a real mesh of Neumo's ~16 product verticals.</p>
+    </div>
+    <div class="footer"><span>MCP 104</span><span>↦ arrow keys / space</span></div>
+  </section>
+
+  <!-- 2 RECAP -->
+  <section class="slide">
+    <p class="kicker">Where 104 begins</p>
+    <h2>The gateway left three unpaid bills</h2>
+    <div class="fill">
+      <p class="lead">102 introduced the gateway (one door in front of many servers) and flagged its costs. 104 pays them down.</p>
+      <div class="grid3" style="margin-top:14px">
+        <div class="pcard"><div class="who">Org</div><h3>Ownership</h3><p class="small">who builds &amp; maintains it all?</p></div>
+        <div class="pcard"><div class="who">Availability</div><h3>Single point of failure</h3><p class="small">one door, total blast radius</p></div>
+        <div class="pcard"><div class="who">Correctness</div><h3>Silent mis-routing</h3><p class="small">healthy, but wrong</p></div>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 104 · Recap</span><span></span></div>
+  </section>
+
+  <!-- 3 GRANULARITY -->
+  <section class="slide">
+    <p class="kicker">1 · Granularity</p>
+    <h2>The server cut <span class="accent">is</span> a least-privilege boundary</h2>
+    <div class="fill">
+      <svg viewBox="0 0 980 300" role="img" aria-label="Per-vertical server mixes read and privileged tools; per-capability split separates them">
+        <text x="20" y="24" font-size="14" font-weight="700" fill="#1b2733">Cut A · one server per vertical</text>
+        <rect x="20" y="36" width="420" height="210" rx="11" fill="#f7f8ff" stroke="#4f46e5" stroke-width="1.4"/>
+        <text x="38" y="62" font-size="13" font-weight="700" fill="#4f46e5">Billing server</text>
+        <rect x="38" y="78" width="180" height="30" rx="6" fill="#fff" stroke="#dde3ea"/><text x="128" y="98" font-size="11.5" text-anchor="middle" fill="#1b2733">get_invoice</text>
+        <rect x="232" y="78" width="180" height="30" rx="6" fill="#fff" stroke="#dde3ea"/><text x="322" y="98" font-size="11.5" text-anchor="middle" fill="#1b2733">get_order</text>
+        <rect x="38" y="116" width="180" height="30" rx="6" fill="#fdf3f2" stroke="#b42318"/><text x="128" y="136" font-size="11.5" text-anchor="middle" fill="#b42318">issue_refund 🔒</text>
+        <rect x="232" y="116" width="180" height="30" rx="6" fill="#fdf3f2" stroke="#b42318"/><text x="322" y="136" font-size="11.5" text-anchor="middle" fill="#b42318">void_charge 🔒</text>
+        <text x="38" y="184" font-size="12" fill="#5a6776">An agent binds the WHOLE surface —</text>
+        <text x="38" y="204" font-size="12" fill="#5a6776">reads + money-moving writes together.</text>
+        <text x="38" y="228" font-size="12.5" font-weight="700" fill="#b42318">All-or-nothing · mixed trust.</text>
+
+        <text x="540" y="24" font-size="14" font-weight="700" fill="#1b2733">Cut B · by capability / task</text>
+        <rect x="540" y="36" width="420" height="95" rx="11" fill="#f7f8ff" stroke="#4f46e5" stroke-width="1.4"/>
+        <text x="558" y="60" font-size="12.5" font-weight="700" fill="#4f46e5">billing-read</text>
+        <rect x="558" y="72" width="180" height="28" rx="6" fill="#fff" stroke="#dde3ea"/><text x="648" y="91" font-size="11" text-anchor="middle" fill="#1b2733">get_invoice</text>
+        <rect x="752" y="72" width="190" height="28" rx="6" fill="#fff" stroke="#dde3ea"/><text x="847" y="91" font-size="11" text-anchor="middle" fill="#1b2733">get_order</text>
+        <rect x="540" y="143" width="420" height="80" rx="11" fill="#fdf3f2" stroke="#b42318" stroke-width="1.4"/>
+        <text x="558" y="167" font-size="12.5" font-weight="700" fill="#b42318">billing-refunds 🔒</text>
+        <rect x="558" y="179" width="180" height="28" rx="6" fill="#fff" stroke="#b42318"/><text x="648" y="198" font-size="11" text-anchor="middle" fill="#b42318">issue_refund</text>
+        <rect x="752" y="179" width="190" height="28" rx="6" fill="#fff" stroke="#b42318"/><text x="847" y="198" font-size="11" text-anchor="middle" fill="#b42318">void_charge</text>
+        <text x="540" y="244" font-size="12.5" font-weight="700" fill="#4f46e5">A read-only agent binds only billing-read.</text>
+      </svg>
+      <div class="callout">Per-vertical recreates the <b>god-agent / union-of-privileges</b> problem at <i>packaging time</i>. Cut by capability/task instead.</div>
+    </div>
+    <div class="footer"><span>MCP 104 · Granularity</span><span></span></div>
+  </section>
+
+  <!-- 4 TRUST HOMOGENEOUS -->
+  <section class="slide center">
+    <p class="kicker">Why the capability cut wins</p>
+    <h2 style="max-width:24ch">Capability-scoped servers are <span class="accent">trust-homogeneous</span></h2>
+    <p class="lead">"Bind <code>billing-refunds</code>" now <i>means</i> "grant one trust tier" — everything inside is the same risk class. The packaging unit and the trust boundary snap into alignment. Per-vertical smears tiers together; per-capability separates them.</p>
+    <div class="footer"><span>MCP 104 · Trust-homogeneous</span><span></span></div>
+  </section>
+
+  <!-- 5 COLLISIONS -->
+  <section class="slide">
+    <p class="kicker">Collisions &amp; namespacing</p>
+    <h2>Duplicate names don't error — they vanish</h2>
+    <div class="two fill">
+      <div>
+        <p>Billing, CRM, and Shipping each name a tool <code>search</code>. All land in the gateway's catalog.</p>
+        <div class="callout danger">A naive gateway <b>silently shadows</b> one with another (last-registered wins) — a whole tool becomes invisibly unreachable, with no error. Best case, the model mis-selects between look-alikes.</div>
+      </div>
+      <div>
+        <div class="callout ok"><b>Fix: namespace by server.</b> <code>billing.search</code>, <code>crm.search</code>. Restores uniqueness, gives the model a disambiguating signal — and the prefix encodes the owning server (matters for ownership later).</div>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 104 · Collisions</span><span></span></div>
+  </section>
+
+  <!-- 6 REGISTRY -->
+  <section class="slide">
+    <p class="kicker">The registry</p>
+    <h2>MCP discovers tools — not servers</h2>
+    <div class="two fill">
+      <div>
+        <p>The handshake (<code>tools/list</code> + the <code>list_changed</code> notification) tells the gateway what an <i>already-connected</i> server offers.</p>
+        <div class="callout">But it never tells the gateway a <b>new server exists</b>. Discovering servers = config / a registry you build and run. The protocol gives you the calling; not the directory.</div>
+      </div>
+      <div>
+        <p class="small"><b>So the registry owns:</b></p>
+        <ul class="small">
+          <li>which servers exist + where to reach them</li>
+          <li>owners and trust levels</li>
+          <li><b>versioning + a reviewed contract</b> — the danger is <i>silent schema drift</i> breaking live agents</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 104 · Registry</span><span></span></div>
+  </section>
+
+  <!-- 7 AVAILABILITY -->
+  <section class="slide">
+    <p class="kicker d">2 · Availability</p>
+    <h2>The gateway turns independent failures into one correlated failure</h2>
+    <div class="fill">
+      <p class="lead">Before: a Billing crash cost you Billing. After: the gateway sits in the hot path of all 16, so one gateway hiccup makes <b>every</b> vertical unreachable at once — including the healthy ones.</p>
+      <div class="callout danger">"The mothership falls and the whole swarm goes dark." Centralization bought portability and paid for it in <b>blast radius</b>.</div>
+    </div>
+    <div class="footer"><span>MCP 104 · Availability</span><span></span></div>
+  </section>
+
+  <!-- 8 HARDENING -->
+  <section class="slide">
+    <p class="kicker">Hardening the mothership</p>
+    <h2>The slow vertical is scarier than the dead one</h2>
+    <div class="two fill">
+      <div>
+        <p><b>Kill the SPOF:</b> run N <b>stateless</b> gateway replicas behind a load balancer + health checks. Any replica serves any request.</p>
+        <div class="callout warn"><b>The trap:</b> a <i>slow</i> vertical (not cleanly down) makes calls pile up and <b>exhaust the gateway's pool</b> — recreating the full-mesh outage from <i>one</i> sick drone.</div>
+      </div>
+      <div>
+        <p class="small"><b>Restore fault isolation at the gateway:</b></p>
+        <ul class="small">
+          <li><b>Timeouts</b> — never block forever on a vertical</li>
+          <li><b>Circuit breakers</b> — after repeated failures, fail <i>fast</i> instead of hammering</li>
+          <li><b>Bulkheads</b> — cap concurrency <i>per vertical</i> so one can't eat all capacity</li>
+          <li>+ serve catalogs from <b>cache</b>; return a clean error so agents route around</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 104 · Hardening</span><span></span></div>
+  </section>
+
+  <!-- 9 EXTRA HOP -->
+  <section class="slide">
+    <p class="kicker">The extra hop</p>
+    <h2>The network is cheap; the gateway's own work isn't</h2>
+    <div class="two fill">
+      <div>
+        <p>Every call is now client → gateway → vertical: added nodes/edges = inherent latency and a new fault point.</p>
+        <p class="small" style="margin-top:8px"><b>Wire levers:</b> connection pooling / keep-alive, streaming passthrough (no buffering), co-location.</p>
+      </div>
+      <div>
+        <div class="callout"><b>The real cost</b> is usually the gateway's <i>per-request</i> work — if it runs a semantic tool-search on every call, that compute dwarfs the network. Biggest win: <b>cache / precompute the routing.</b></div>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 104 · Extra hop</span><span></span></div>
+  </section>
+
+  <!-- 10 ROUTER SILENT -->
+  <section class="slide">
+    <p class="kicker d">3 · Router quality</p>
+    <h2>Silent mis-routing: healthy, but wrong</h2>
+    <div class="fill">
+      <p class="lead">The gateway's tool-search decides which 2–3 tools the model even sees. It's an <b>ML component</b>, not plumbing.</p>
+      <div class="callout danger">A crash is <b>loud</b> (error, alert). Mis-routing is <b>silent</b>: 200 OK, fast, tidy — and the wrong tools, or the right one <i>omitted entirely</i> so the model can't recover. It passes every availability check while being wrong.</div>
+    </div>
+    <div class="footer"><span>MCP 104 · Silent mis-routing</span><span></span></div>
+  </section>
+
+  <!-- 11 EVAL THE ROUTER -->
+  <section class="slide">
+    <p class="kicker">Catching a healthy-but-wrong system</p>
+    <h2>Evaluate the router like a model, not like code</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Eval set:</b> representative queries paired with the tool(s) that <i>should</i> win.</li>
+        <li><b>Measure a rate, not pass/fail:</b> did the right tool land in the top-k? (recall@k) — it's a ranker.</li>
+        <li><b>Regression gate:</b> re-run on every router/embedding change <i>or new vertical</i> (adding servers can quietly degrade routing).</li>
+        <li><b>Observability:</b> log <code>query → candidates → chosen → outcome</code>; mine real misses.</li>
+        <li><b>Feed misses back:</b> the eval set is a living asset.</li>
+      </ul>
+      <div class="callout warn">Health checks answer "is it up?" — never "is it right?" Availability monitoring is blind to a correctness failure.</div>
+    </div>
+    <div class="footer"><span>MCP 104 · Evaluating the router</span><span></span></div>
+  </section>
+
+  <!-- 12 OWNERSHIP -->
+  <section class="slide">
+    <p class="kicker">4 · Ownership (Conway's Law)</p>
+    <h2>The central team paves the road; verticals drive on it</h2>
+    <div class="two fill">
+      <div>
+        <p>Who builds the 16 servers? Not one central team (a bottleneck that doesn't know 16 domains). The scarce knowledge is <b>the domain, not MCP</b>.</p>
+        <div class="callout ok">"Easier to teach the Billing team MCP than to teach me Billing." Push implementation to the <b>domain experts</b>.</div>
+      </div>
+      <div>
+        <p class="small"><b>Central platform team owns the paved road:</b></p>
+        <ul class="small">
+          <li>MCP SDK / template, namespacing &amp; schema standards</li>
+          <li>the gateway, registry, eval harness</li>
+          <li>the 102/103 security library (taint + gate) as defaults</li>
+        </ul>
+        <p class="xs warnc" style="margin-top:8px">Decentralizing <b>requires</b> this governance — or you get 16 incompatible styles.</p>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 104 · Ownership</span><span></span></div>
+  </section>
+
+  <!-- 13 CONTRACT -->
+  <section class="slide center">
+    <p class="kicker">Conway's Law, turned intentional</p>
+    <h2 style="max-width:24ch">The MCP interface <span class="accent">is</span> the contract between teams</h2>
+    <p class="lead">However you split the teams, the architecture mirrors it — so make the split deliberate. The versioned MCP contract becomes a clean, explicit boundary: vertical teams own their servers, the platform team owns the road, and the schema is the handshake between them.</p>
+    <div class="footer"><span>MCP 104 · The contract</span><span></span></div>
+  </section>
+
+  <!-- 14 ZERO TRUST AUTH -->
+  <section class="slide">
+    <p class="kicker d">Auth across verticals</p>
+    <h2>Zero trust — the gateway is not a trust anchor</h2>
+    <div class="two fill">
+      <div>
+        <div class="callout danger"><b>Don't</b> let the gateway call everything with its own god credentials: (1) it becomes a single point of <i>total</i> compromise; (2) every vertical sees one omnipotent caller — least-privilege gone, the confused-deputy rebuilt.</div>
+      </div>
+      <div>
+        <p class="small"><b>Do, instead:</b></p>
+        <ul class="small">
+          <li><b>Identity propagation (on-behalf-of):</b> authorize against the end principal, not the gateway</li>
+          <li><b>Per-vertical scopes:</b> read-only in CRM, refund-only in Billing — never a blanket pass</li>
+          <li><b>Each vertical enforces its own authz</b> — never "the gateway said so"</li>
+        </ul>
+        <p class="xs accent2" style="margin-top:8px">Effective power = (principal may) ∩ (vertical permits), enforced at the vertical.</p>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 104 · Zero-trust auth</span><span></span></div>
+  </section>
+
+  <!-- 15 MIGRATION -->
+  <section class="slide">
+    <p class="kicker">5 · Bringing it home</p>
+    <h2>The gateway is a scaling tool, not a starting point</h2>
+    <div class="fill">
+      <p class="lead">Don't build a gateway + 16 servers on day one. The gateway earns its complexity only when <i>many</i> servers cause context bloat. With 2–3 servers, an agent connects directly.</p>
+      <p style="margin-top:6px"><b>Wedge in:</b></p>
+      <ul>
+        <li>Find <b>one painful cross-vertical workflow</b> a human does today by hand.</li>
+        <li>Build <b>only the tools that workflow needs</b> (capability cut), wired straight to one agent — no gateway/registry/router yet.</li>
+        <li>Ship it, <b>measure the time/$ saved.</b> That's your evidence to fund the rest.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>MCP 104 · Migration</span><span></span></div>
+  </section>
+
+  <!-- 16 WHEN NOT -->
+  <section class="slide">
+    <p class="kicker">The wisdom slide</p>
+    <h2>When <span class="dangerc">not</span> to build the mesh</h2>
+    <div class="fill">
+      <ul>
+        <li><b>You can't fund the <i>run</i> cost</b> (not just the build). A half-maintained mesh is worse than none.</li>
+        <li><b>No real cross-vertical demand</b> — if workflows rarely span verticals, point-to-point integrations win.</li>
+        <li><b>Not enough scale</b> — the gateway/router/registry only pay off with many servers; below that it's pure complexity tax.</li>
+        <li><b>The org can't own servers</b> — without vertical-team ownership, you're back to the central bottleneck.</li>
+      </ul>
+      <div class="callout">The test: <b>if you can't name a painful, repeated, cross-vertical workflow with real ROI, you don't have a reason yet.</b> Don't build for an imagined future.</div>
+    </div>
+    <div class="footer"><span>MCP 104 · When not to</span><span></span></div>
+  </section>
+
+  <!-- 17 TAKEAWAYS -->
+  <section class="slide">
+    <p class="kicker">Key takeaways</p>
+    <h2>What to walk away with</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Granularity is a least-privilege boundary</b> — cut by capability (trust-homogeneous), not vertical.</li>
+        <li><b>Namespace</b> to stop silent tool-shadowing; <b>run a registry</b> (MCP discovers tools, not servers).</li>
+        <li><b>Harden the gateway</b> (stateless replicas) and restore isolation with timeouts + circuit breakers + bulkheads.</li>
+        <li><b>Evaluate the router like a model</b> — mis-routing is silent; availability checks won't catch it.</li>
+        <li><b>Pave the road, don't build all 16</b>; propagate identity (zero trust); <b>wedge in</b>, and don't build without ROI + run budget.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>MCP 104 · Takeaways</span><span></span></div>
+  </section>
+
+  <!-- 18 FIN -->
+  <section class="slide center">
+    <p class="kicker">End of the series</p>
+    <h1>101 → 102 → 103 → 104</h1>
+    <p class="lead">Why MCP exists · how it fails &amp; how to defend · a working secure agent · operating it at mesh scale. You can now reason about an agent platform from the protocol up to the org chart.</p>
+    <div class="footer"><span>MCP 104 · fin</span><span></span></div>
+  </section>
+
+  <div class="bar" id="bar"></div>
+</div>
+<div class="nav"><button onclick="go(-1)">‹ Prev</button><button onclick="go(1)">Next ›</button></div>
+<script>
+  const slides=[...document.querySelectorAll('.slide')];let i=0;const bar=document.getElementById('bar');
+  function show(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,k)=>s.classList.toggle('active',k===i));bar.style.width=((i+1)/slides.length*100)+'%';}
+  function go(d){show(i+d)}
+  document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}else if(e.key==='Home'){show(0)}else if(e.key==='End'){show(slides.length-1)}});
+  show(0);
+</script>
+</body>
+</html>

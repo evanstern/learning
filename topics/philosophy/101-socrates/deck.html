@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>101 · Socrates — The Examined Life</title>
+<style>
+  :root{
+    --ink:#1b2733; --muted:#5a6776; --accent:#4f46e5; --accent2:#0e9488;
+    --line:#dde3ea; --chip:#f3f5f8; --card:#ffffff; --stage:#e7ebf1; --warn:#b4530a;
+    --codebg:#1e2636; --codefg:#cdd6f4;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--stage);font-family:var(--sans);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .deck{width:min(97vw,1320px);aspect-ratio:16/9;position:relative}
+  .slide{position:absolute;inset:0;background:var(--card);border-radius:18px;
+    box-shadow:0 18px 50px rgba(20,30,50,.16);padding:40px 52px 56px;display:none;
+    flex-direction:column;overflow:hidden}
+  .slide.active{display:flex}
+  .kicker{font-size:17px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 14px}
+  h1{font-size:66px;line-height:1.05;margin:0 0 20px;letter-spacing:-.02em}
+  h2{font-size:48px;line-height:1.12;margin:0 0 22px;letter-spacing:-.01em}
+  p,li{font-size:30px;line-height:1.45;color:var(--ink)}
+  .muted{color:var(--muted)}
+  ul{margin:8px 0 0;padding-left:28px}
+  li{margin:20px 0}
+  .lead{font-size:36px;line-height:1.4;color:var(--muted);max-width:34ch}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:start}
+  .fill{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+  .center{align-items:center;text-align:center;justify-content:center}
+  .chip{display:inline-block;background:var(--chip);border:1px solid var(--line);
+    border-radius:999px;padding:7px 18px;font-size:20px;font-weight:600;margin:5px 7px 5px 0}
+  code,.mono{font-family:var(--mono);background:var(--chip);border:1px solid var(--line);
+    border-radius:6px;padding:2px 9px;font-size:.92em}
+  .callout{border-left:5px solid var(--accent);background:#f5f5ff;border-radius:0 12px 12px 0;
+    padding:20px 26px;font-size:28px;margin-top:14px}
+  .warn{border-left-color:var(--warn);background:#fff6ee}
+  .ok{border-left-color:var(--accent2);background:#eefaf7}
+  .accent{color:var(--accent)} .accent2{color:var(--accent2)} .warnc{color:var(--warn)}
+  svg{width:100%;height:auto;display:block}
+  .figure{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+  .figure svg{max-height:100%}
+  .footer{position:absolute;left:52px;right:52px;bottom:16px;display:flex;
+    justify-content:space-between;align-items:center;font-size:16px;color:var(--muted)}
+  .footer .pageno{font-variant-numeric:tabular-nums}
+  .bar{position:absolute;left:0;bottom:0;height:5px;background:var(--accent);
+    border-radius:0 0 0 18px;transition:width .25s ease}
+  .nav{position:fixed;bottom:14px;right:18px;display:flex;gap:8px;z-index:10}
+  .nav button{font-family:var(--sans);font-size:17px;border:1px solid var(--line);
+    background:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;color:var(--ink)}
+  .nav button:hover{background:var(--chip)}
+  .title-wrap{display:flex;flex-direction:column;justify-content:center;height:100%}
+  .small{font-size:24px}
+  .qbadge{display:inline-block;background:var(--accent2);color:#fff;border-radius:50%;
+    width:26px;height:26px;line-height:26px;text-align:center;font-size:17px;font-weight:700;
+    vertical-align:super}
+  [data-tip]{cursor:help}
+  .tip-pop{position:fixed;z-index:50;max-width:420px;background:var(--ink);color:#fff;
+    font-size:19px;line-height:1.4;padding:13px 17px;border-radius:10px;pointer-events:none;
+    box-shadow:0 8px 24px rgba(20,30,50,.28);opacity:0;transform:translateY(4px);
+    transition:opacity .12s ease,transform .12s ease}
+  .tip-pop.show{opacity:1;transform:translateY(0)}
+  @media print{
+    body{display:block;background:#fff;overflow:visible}
+    .deck{width:100%;aspect-ratio:auto}
+    .slide{display:flex;position:relative;page-break-after:always;box-shadow:none;
+      border:1px solid var(--line);margin-bottom:18px;height:96vh}
+    .nav{display:none}
+    .tip-pop{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide active">
+    <div class="title-wrap">
+      <p class="kicker">Philosophy · Lesson 101</p>
+      <h1>Socrates<br>The Examined Life</h1>
+      <p class="lead">How one barefoot pest turned philosophy from staring at the sky into asking how a person should live.</p>
+      <p class="muted small" style="margin-top:30px">c. 470–399 BC · Athens · scan solo or follow along live</p>
+    </div>
+    <div class="footer"><span>Socrates 101</span><span>↦ arrow keys / space to advance</span></div>
+  </section>
+
+  <!-- 2 SETTING -->
+  <section class="slide">
+    <p class="kicker">The Problem</p>
+    <h2>Athens, 5th century BC: persuasion <em>is</em> power</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Radical direct democracy.</b><br><span class="muted small">— any citizen speaks in the Assembly; juries run to 500; most offices filled by <span data-tip="Sortition: filling public offices by random lottery among citizens instead of by election — Athens used it for most posts, so ordinary citizens constantly held real power.">lottery&#160;<span class="qbadge">?</span></span>.</span></li>
+        <li><b>No professional lawyers or judges.</b><br><span class="muted small">— you argue your own case in front of hundreds of neighbors. The better talker wins.</span></li>
+      </ul>
+      <div class="callout">A system built on equal voice makes <b>talking well</b> the sharpest weapon in the city.</div>
+    </div>
+    <div class="footer"><span>Socrates · setting</span><span></span></div>
+  </section>
+
+  <!-- 3 SOPHISTS + CHART -->
+  <section class="slide">
+    <p class="kicker">The Problem</p>
+    <h2>The <span data-tip="Sophist: a traveling professional teacher in 5th-century Greece who charged fees to teach rhetoric and argumentation — including how to argue either side of any question persuasively.">sophists&#160;<span class="qbadge">?</span></span> sell the weapon</h2>
+    <div class="two" style="flex:1;min-height:0;align-items:center">
+      <ul style="margin-top:0">
+        <li>Traveling pros teaching the rich to argue <b>either side</b> of anything.</li>
+        <li>Protagoras: <i>"man is the measure of all things"</i> — truth is whatever persuades.</li>
+      </ul>
+      <div>
+        <svg viewBox="0 0 560 330" role="img" aria-label="bar chart: Hippias earned about 30 years of craftsman wages in one trip">
+          <line x1="70" y1="30" x2="70" y2="260" stroke="#dde3ea" stroke-width="2"/>
+          <line x1="70" y1="260" x2="530" y2="260" stroke="#dde3ea" stroke-width="2"/>
+          <rect x="120" y="252" width="140" height="8" fill="#5a6776"/>
+          <rect x="330" y="40" width="140" height="220" fill="#4f46e5"/>
+          <text x="190" y="240" text-anchor="middle" font-size="24" font-weight="700" fill="#1b2733">1 yr</text>
+          <text x="400" y="30" text-anchor="middle" font-size="24" font-weight="700" fill="#4f46e5">~30 yrs</text>
+          <text x="190" y="290" text-anchor="middle" font-size="18" fill="#5a6776">skilled craftsman,</text>
+          <text x="190" y="312" text-anchor="middle" font-size="18" fill="#5a6776">one year's wages</text>
+          <text x="400" y="290" text-anchor="middle" font-size="18" fill="#5a6776">Hippias the sophist,</text>
+          <text x="400" y="312" text-anchor="middle" font-size="18" fill="#5a6776">ONE visit to Sicily</text>
+        </svg>
+        <p class="muted small" style="margin:6px 0 0;text-align:center">Rhetoric paid ~30 years of honest work per trip. The rich bought it.</p>
+      </div>
+    </div>
+    <div class="footer"><span>Socrates · sophists</span><span></span></div>
+  </section>
+
+  <!-- 4 THE DEEPER ROT -->
+  <section class="slide">
+    <p class="kicker">The Problem</p>
+    <h2>Even <em>free</em> persuasion is rotten</h2>
+    <div class="fill">
+      <p class="lead" style="max-width:44ch">Suppose Athens made sophist training free and universal. Every citizen equally armed. Fixed?</p>
+      <ul>
+        <li><b>No.</b> Two things are still missing: a reason to care about <b>truth</b> over victory…</li>
+        <li>…and <b>agreed definitions</b> — stop short of those and you can argue anything about anything.</li>
+      </ul>
+      <div class="callout ok">Socrates' whole method starts exactly there: <b>force the definition into the open first.</b></div>
+    </div>
+    <div class="footer"><span>Socrates · the real rot</span><span></span></div>
+  </section>
+
+  <!-- 5 THE MAN -->
+  <section class="slide">
+    <p class="kicker">Enter the gadfly</p>
+    <h2>Socrates of Athens</h2>
+    <div class="fill">
+      <p>
+        <span class="chip">c. 470–399 BC</span>
+        <span class="chip">stonemason's son</span>
+        <span class="chip">war veteran</span>
+        <span class="chip">famously ugly</span>
+        <span class="chip">barefoot, one cloak</span>
+        <span class="chip">wrote nothing</span>
+      </p>
+      <ul>
+        <li>Spent his days in the <span data-tip="Agora: the central marketplace and public square of a Greek city — Athens' combination of mall, courthouse steps, and town square, where anyone could be buttonholed for a conversation.">agora&#160;<span class="qbadge">?</span></span> interrogating anyone — young, old, slave, free — about courage, justice, piety, the state of their souls.</li>
+        <li><b>Never charged a fee.</b> The exact inverse of a sophist: he insisted he was no teacher and had nothing to sell — only questions.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Socrates · the man</span><span></span></div>
+  </section>
+
+  <!-- 6 ELENCHUS DIAGRAM -->
+  <section class="slide">
+    <p class="kicker">The Method</p>
+    <h2>The <span data-tip="Elenchus: Socrates' refutation method — demand a definition, secure agreement to a few innocent-looking premises, then show they contradict the definition. It proves inconsistency, not answers.">elenchus&#160;<span class="qbadge">?</span></span>, step by step</h2>
+    <div class="figure">
+      <svg viewBox="0 0 980 380" role="img" aria-label="flow of the elenchus: question, definition, premises, contradiction, aporia">
+        <rect x="20" y="40" width="270" height="90" rx="14" fill="#eef0ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="155" y="78" text-anchor="middle" font-size="26" fill="#1b2733" font-family="sans-serif">&#8220;What is X?&#8221;</text>
+        <text x="155" y="108" text-anchor="middle" font-size="19" fill="#5a6776" font-family="sans-serif">courage? piety? justice?</text>
+        <line x1="290" y1="85" x2="360" y2="85" stroke="#5a6776" stroke-width="3" marker-end="url(#ar)"/>
+        <rect x="360" y="40" width="270" height="90" rx="14" fill="#f3f5f8" stroke="#5a6776" stroke-width="2"/>
+        <text x="495" y="78" text-anchor="middle" font-size="26" fill="#1b2733" font-family="sans-serif">A definition</text>
+        <text x="495" y="108" text-anchor="middle" font-size="19" fill="#5a6776" font-family="sans-serif">confidently offered</text>
+        <line x1="630" y1="85" x2="700" y2="85" stroke="#5a6776" stroke-width="3" marker-end="url(#ar)"/>
+        <rect x="700" y="40" width="260" height="90" rx="14" fill="#f3f5f8" stroke="#5a6776" stroke-width="2"/>
+        <text x="830" y="78" text-anchor="middle" font-size="26" fill="#1b2733" font-family="sans-serif">Agree to 2–3</text>
+        <text x="830" y="108" text-anchor="middle" font-size="26" fill="#1b2733" font-family="sans-serif">obvious premises</text>
+        <line x1="830" y1="130" x2="830" y2="200" stroke="#5a6776" stroke-width="3" marker-end="url(#ar)"/>
+        <rect x="620" y="200" width="340" height="90" rx="14" fill="#fff6ee" stroke="#b4530a" stroke-width="2"/>
+        <text x="790" y="238" text-anchor="middle" font-size="26" fill="#b4530a" font-family="sans-serif">Premises collide</text>
+        <text x="790" y="268" text-anchor="middle" font-size="19" fill="#5a6776" font-family="sans-serif">the definition falls</text>
+        <line x1="620" y1="245" x2="470" y2="245" stroke="#5a6776" stroke-width="3" marker-end="url(#ar)"/>
+        <rect x="130" y="200" width="340" height="90" rx="14" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="300" y="238" text-anchor="middle" font-size="26" fill="#0e9488" font-family="sans-serif">Aporia — &#8220;no way through&#8221;</text>
+        <text x="300" y="268" text-anchor="middle" font-size="19" fill="#5a6776" font-family="sans-serif">an improved state of not knowing</text>
+        <path d="M 130 245 C 40 245 40 85 20 85" fill="none" stroke="#5a6776" stroke-width="2.5" stroke-dasharray="7 7" marker-end="url(#ar)"/>
+        <text x="52" y="175" text-anchor="middle" font-size="19" fill="#5a6776" font-family="sans-serif">try again</text>
+        <defs><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="#5a6776"/></marker></defs>
+      </svg>
+    </div>
+    <div class="footer"><span>Socrates · elenchus</span><span></span></div>
+  </section>
+
+  <!-- 7 LACHES WORKED EXAMPLE -->
+  <section class="slide">
+    <p class="kicker">The Method · worked example</p>
+    <h2>A general defines courage — and loses it</h2>
+    <div class="fill">
+      <div class="callout" style="margin-top:0"><b>P1 (the definition):</b> Courage <b>is</b> endurance of the soul — standing your ground.</div>
+      <div class="callout"><b>P2:</b> Courage is a fine, admirable thing.</div>
+      <div class="callout"><b>P3:</b> <i>Ignorant</i> endurance — persisting cluelessly — is <b>not</b> fine.</div>
+      <div class="callout warn"><b>Collision:</b> if courage just <i>is</i> endurance, then ignorant endurance is courage — courage that isn't fine. P2 explodes. And the repair (&#8220;<i>wise</i> endurance&#8221;) must <b>narrow</b>, not expand… and Socrates dismantles that version too.</div>
+    </div>
+    <div class="footer"><span>Socrates · Laches</span><span></span></div>
+  </section>
+
+  <!-- 8 WHAT GOT PROVEN -->
+  <section class="slide">
+    <p class="kicker">The Method · the fine print</p>
+    <h2>What did Socrates actually prove?</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Only that the three can't all be true.</b><br><span class="muted small">— a contradiction licenses &#8220;not all of these&#8221; and nothing more. It never says <i>which</i> premise was false.</span></li>
+        <li><b>Nothing is built. The demolition is the product.</b><br><span class="muted small">— the general leaves knowing exactly one new thing: that he didn't know what he was sure he knew.</span></li>
+      </ul>
+      <div class="callout ok">The correct answer to &#8220;so what is courage?&#8221; at the end of the dialogue is: <b>&#8220;I don't know.&#8221;</b> Saying it out loud is the skill.</div>
+    </div>
+    <div class="footer"><span>Socrates · aporia</span><span></span></div>
+  </section>
+
+  <!-- 9 ORACLE STORY -->
+  <section class="slide">
+    <p class="kicker">Socratic ignorance</p>
+    <h2>The Oracle's riddle</h2>
+    <div class="fill">
+      <ul>
+        <li>His friend Chaerephon asks the Oracle at Delphi: <i>is anyone wiser than Socrates?</i> Answer: <b>no one.</b></li>
+        <li>Socrates is baffled — he's sure he knows nothing of importance. But the god can't lie.</li>
+        <li>So he treats the oracle as a <b>puzzle</b>: he cross-examines everyone with a reputation for wisdom — politicians, poets, master craftsmen.</li>
+      </ul>
+      <div class="callout">Every expert fails the way the general failed. So how can &#8220;no one is wiser&#8221; and &#8220;Socrates knows nothing&#8221; both be true?</div>
+    </div>
+    <div class="footer"><span>Socrates · Delphi</span><span></span></div>
+  </section>
+
+  <!-- 10 SIMPLE VS DOUBLE IGNORANCE -->
+  <section class="slide">
+    <p class="kicker">Socratic ignorance</p>
+    <h2>The one increment that makes a ranking</h2>
+    <div class="figure">
+      <svg viewBox="0 0 960 330" role="img" aria-label="double ignorance versus simple ignorance">
+        <rect x="40" y="60" width="400" height="200" rx="16" fill="#fff6ee" stroke="#b4530a" stroke-width="2"/>
+        <text x="240" y="110" text-anchor="middle" font-size="28" fill="#b4530a" font-family="sans-serif">The politician</text>
+        <text x="240" y="160" text-anchor="middle" font-size="24" fill="#1b2733" font-family="sans-serif">doesn't know what justice is</text>
+        <text x="240" y="200" text-anchor="middle" font-size="24" fill="#1b2733" font-family="sans-serif">AND doesn't know that</text>
+        <text x="240" y="240" text-anchor="middle" font-size="22" fill="#5a6776" font-family="sans-serif">&#8220;double ignorance&#8221;</text>
+        <rect x="520" y="60" width="400" height="200" rx="16" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="720" y="110" text-anchor="middle" font-size="28" fill="#0e9488" font-family="sans-serif">Socrates</text>
+        <text x="720" y="160" text-anchor="middle" font-size="24" fill="#1b2733" font-family="sans-serif">doesn't know what justice is</text>
+        <text x="720" y="200" text-anchor="middle" font-size="24" fill="#1b2733" font-family="sans-serif">but KNOWS that he doesn't</text>
+        <text x="720" y="240" text-anchor="middle" font-size="22" fill="#5a6776" font-family="sans-serif">&#8220;simple ignorance&#8221; = human wisdom</text>
+        <text x="480" y="170" text-anchor="middle" font-size="40" fill="#5a6776" font-family="sans-serif">&#8250;</text>
+        <text x="480" y="305" text-anchor="middle" font-size="21" fill="#5a6776" font-family="sans-serif">both score zero on justice — the ranking lives entirely in the second order</text>
+      </svg>
+    </div>
+    <div class="callout warn" style="font-size:24px">Footnote: <i>&#8220;I know that I know nothing&#8221;</i> appears <b>nowhere in Plato</b>. Apology 21d: &#8220;what I do not know, I do not think I know.&#8221; He even claims some moral knowledge — and dies for it.</div>
+    <div class="footer"><span>Socrates · ignorance</span><span></span></div>
+  </section>
+
+  <!-- 11 STARTING POINT -->
+  <section class="slide">
+    <p class="kicker">Socratic ignorance</p>
+    <h2>A starting point, not a shrug</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Not skepticism.</b> &#8220;I don't know what courage is&#8221; only stings if there's a real answer to be ignorant <i>of</i>. Things can be true.</li>
+        <li><b>False certainty is the obstruction.</b> You can't fill a jar that thinks it's already full — aporia is site preparation.</li>
+        <li><b>Protagoras dissolves the question; the skeptic abandons it; Socrates keeps digging</b> — because the answer exists and matters.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Socrates · why it's a start</span><span></span></div>
+  </section>
+
+  <!-- 12 VIRTUE IS KNOWLEDGE -->
+  <section class="slide">
+    <p class="kicker">The ethics</p>
+    <h2>Virtue is knowledge — no one errs willingly</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Premise:</b> every sane act aims at something the actor takes to be good <i>for them</i>. Even the arsonist pursues glory, revenge, the thrill — an <i>apparent</i> good.</li>
+        <li><b>So all wrongdoing is error</b> — a mistake about what's genuinely good. Nobody reaches for the bad <i>as bad</i>.</li>
+        <li>Which means <span data-tip="Akrasia: weakness of will — knowingly acting against your own better judgment. Socrates claimed it's impossible: what looks like it is always a hidden error in judgment.">akrasia&#160;<span class="qbadge">?</span></span> — knowing the good and doing the bad anyway — is declared <b>impossible</b>.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Socrates · virtue = knowledge</span><span></span></div>
+  </section>
+
+  <!-- 13 THE DONUT TEST -->
+  <section class="slide">
+    <p class="kicker">The ethics · stress test</p>
+    <h2>The donut at 2am: two readings</h2>
+    <div class="two" style="flex:1;min-height:0;align-items:stretch">
+      <div class="callout warn" style="margin-top:0"><b>Judgment overpowered.</b><br><span class="small">&#8220;This is worse for me — and I'm biting anyway.&#8221; Verdict intact, defied. If this happens, akrasia is real and Socrates is refuted.</span></div>
+      <div class="callout ok" style="margin-top:0"><b>Judgment rewritten.</b><br><span class="small">&#8220;One won't hurt… I've earned it… Monday.&#8221; The verdict was quietly hijacked before the bite. The failure was in the <i>knowing</i> — Socrates stands.</span></div>
+    </div>
+    <div class="callout" style="font-size:24px">History mostly sided with the donut: Aristotle rehabilitated akrasia; Plato split the soul into parts so it <i>could</i> fight itself. But the doctrine survives — CBT's premise (fix the belief, behavior follows) is &#8220;virtue is knowledge&#8221; with a copay.</div>
+    <div class="footer"><span>Socrates · akrasia</span><span></span></div>
+  </section>
+
+  <!-- 14 TRIAL CONTEXT -->
+  <section class="slide">
+    <p class="kicker">The trial · 399 BC</p>
+    <h2>A traumatized city looks for someone to blame</h2>
+    <div class="fill">
+      <ul>
+        <li><b>404 BC:</b> Athens loses a 27-year war to Sparta. A Spartan-backed junta — the <b>Thirty Tyrants</b> — executes ~5% of the citizenry in months.</li>
+        <li><b>The junta's leader, Critias, and the war's great traitor, Alcibiades:</b> both famously Socrates' companions.</li>
+        <li><b>403 BC:</b> democracy restored — with an <b>amnesty</b>: no prosecutions for political crimes. The city wants him gone, but politics is legally unsayable.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Socrates · context</span><span></span></div>
+  </section>
+
+  <!-- 15 CHARGES -->
+  <section class="slide">
+    <p class="kicker">The trial</p>
+    <h2>The workaround: religion and the youth</h2>
+    <div class="fill">
+      <ul>
+        <li><b><span data-tip="Asebeia: the Athenian charge of impiety — offenses against the city's official religion. A capital charge, and conveniently non-political on paper.">Asebeia&#160;<span class="qbadge">?</span></span> (impiety), two prongs:</b> he rejects the city's gods, and &#8220;introduces new divinities&#8221; — his private <span data-tip="Daimonion: the small inner divine voice Socrates claimed to hear since childhood. It only ever said no — warning him off actions — and never gave positive advice. The prosecution recast it as an unlicensed new god.">daimonion&#160;<span class="qbadge">?</span></span>, weaponized.</li>
+        <li><b>Corrupting the youth</b> — the jury hears &#8220;youth&#8221; and thinks of two alumni: Critias and Alcibiades. Political rage, laundered as morals.</li>
+        <li><b>The ground was pre-poisoned:</b> Aristophanes' comedy <i>The Clouds</i> had caricatured him as an atheist con-man — 24 years earlier, when the jurors were young.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Socrates · charges</span><span></span></div>
+  </section>
+
+  <!-- 16 VOTE CHART -->
+  <section class="slide">
+    <p class="kicker">The trial · the numbers</p>
+    <h2>Flip 30 votes and he walks</h2>
+    <div class="figure">
+      <svg viewBox="0 0 640 300" role="img" aria-label="bar chart of the guilt vote: 280 guilty, 221 not guilty">
+        <line x1="80" y1="30" x2="80" y2="240" stroke="#dde3ea" stroke-width="2"/>
+        <line x1="80" y1="240" x2="600" y2="240" stroke="#dde3ea" stroke-width="2"/>
+        <rect x="150" y="60" width="150" height="180" fill="#b4530a"/>
+        <rect x="390" y="98" width="150" height="142" fill="#0e9488"/>
+        <text x="225" y="50" text-anchor="middle" font-size="26" font-weight="700" fill="#b4530a">280</text>
+        <text x="465" y="88" text-anchor="middle" font-size="26" font-weight="700" fill="#0e9488">221</text>
+        <text x="225" y="270" text-anchor="middle" font-size="20" fill="#5a6776">guilty</text>
+        <text x="465" y="270" text-anchor="middle" font-size="20" fill="#5a6776">not guilty</text>
+      </svg>
+    </div>
+    <div class="callout warn" style="font-size:24px">Then the death penalty passed <b>by a wider margin than the conviction</b> — jurors who voted him innocent turned around and voted to kill him. What happened in between?</div>
+    <div class="footer"><span>Socrates · the vote</span><span></span></div>
+  </section>
+
+  <!-- 17 PENALTY PHASE -->
+  <section class="slide">
+    <p class="kicker">The trial · penalty phase</p>
+    <h2>His counter-offer: feed me at the head table</h2>
+    <div class="fill">
+      <ul>
+        <li>Athenian rules: prosecution proposes death, the convicted counter-proposes, jury picks one. Everyone expects <b>exile</b>.</li>
+        <li>His opening proposal: <b>free meals for life at the <span data-tip="Prytaneum: the civic hearth of Athens. Free meals there for life was the city's highest honor, reserved for Olympic victors and great public benefactors.">Prytaneum&#160;<span class="qbadge">?</span></span></b> — the honor reserved for Olympic champions. Only then a grudging fine, underwritten by Plato and friends. Too late.</li>
+        <li>Why not exile? <b>&#8220;The unexamined life is not worth living.&#8221;</b> Silence is death anyway; philosophizing elsewhere just restarts the trial abroad. &#8220;I shall obey the god rather than you.&#8221;</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Socrates · Prytaneum</span><span></span></div>
+  </section>
+
+  <!-- 18 CRITO -->
+  <section class="slide">
+    <p class="kicker">The cell</p>
+    <h2>Crito arranges an escape. Socrates refuses.</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Never do wrong — not even in return for wrong.</b> Injustice damages the <i>doer's</i> soul; better to suffer it than commit it. &#8220;They started it&#8221; is not a moral operator.</li>
+        <li><b>The Laws of Athens speak:</b> <i>we raised you; 70 years of staying was consent; persuade us or obey us. Dodge one verdict and no verdict binds anyone.</i></li>
+        <li>The first draft of <b>social-contract theory</b> — residence as consent — two millennia before Hobbes. The <i>men</i> wronged him; the <i>laws</i> didn't. He declines to transfer the revenge.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Socrates · Crito</span><span></span></div>
+  </section>
+
+  <!-- 19 DEATH SCENE -->
+  <section class="slide">
+    <p class="kicker">The hemlock</p>
+    <h2>Consistency, not resignation</h2>
+    <div class="fill">
+      <ul>
+        <li>Spends his last afternoon doing what he always did — arguing philosophy (about whether the soul survives). Drinks the <span data-tip="Hemlock: the poison Athens used for executions — a plant extract causing progressive numbness from the feet upward while the mind stays clear.">hemlock&#160;<span class="qbadge">?</span></span> himself, steadily, mid-conversation.</li>
+        <li>His take on death: a dreamless sleep (no loss), or a relocation — in which case he'll spend eternity <i>interrogating Homer and the heroes</i>. &#8220;There, they surely don't kill you for it.&#8221;</li>
+      </ul>
+      <div class="callout ok">Last words: <i>&#8220;Crito, we owe a cock to Asclepius — pay the debt.&#8221;</i> Asclepius is the god of <b>healing</b>, thanked upon recovery. The prevailing reading: a deadpan exit joke — <b>death is the cure.</b></div>
+    </div>
+    <div class="footer"><span>Socrates · Phaedo</span><span></span></div>
+  </section>
+
+  <!-- 20 SOCRATIC PROBLEM -->
+  <section class="slide">
+    <p class="kicker">The catch</p>
+    <h2>He wrote nothing. Grade the evidence.</h2>
+    <div class="fill">
+      <div class="callout ok" style="margin-top:0"><b>High confidence:</b> he existed, philosophized by public interrogation, wrote nothing, was tried and executed in 399. Sources <i>hostile to each other</i> — student, soldier, mocking comedian — all agree. Enemies are independent attestation.</div>
+      <div class="callout"><b>Middling:</b> the <i>Apology</i> — published while hundreds of living jurors could call foul. Our most constrained, most reliable source.</div>
+      <div class="callout warn"><b>Genuinely murky:</b> where Socrates ends and Plato begins. &#8220;Each age produces a Socrates of its own.&#8221; The saving grace: <b>arguments don't have biographies</b> — the elenchus works no matter who wrote it.</div>
+    </div>
+    <div class="footer"><span>Socrates · the Socratic problem</span><span></span></div>
+  </section>
+
+  <!-- 21 LEGACY LINEAGE -->
+  <section class="slide">
+    <p class="kicker">Why he matters</p>
+    <h2>Churches that are arguments</h2>
+    <div class="figure">
+      <svg viewBox="0 0 980 360" role="img" aria-label="lineage from Socrates to Plato, Aristotle, Cynics, Stoics, Skeptics, and CBT">
+        <rect x="380" y="20" width="220" height="70" rx="14" fill="#eef0ff" stroke="#4f46e5" stroke-width="2.5"/>
+        <text x="490" y="63" text-anchor="middle" font-size="28" fill="#1b2733" font-family="sans-serif">SOCRATES</text>
+        <line x1="430" y1="90" x2="220" y2="150" stroke="#5a6776" stroke-width="2.5" marker-end="url(#lg)"/>
+        <line x1="490" y1="90" x2="490" y2="150" stroke="#5a6776" stroke-width="2.5" marker-end="url(#lg)"/>
+        <line x1="550" y1="90" x2="760" y2="150" stroke="#5a6776" stroke-width="2.5" marker-end="url(#lg)"/>
+        <rect x="110" y="150" width="220" height="60" rx="12" fill="#f3f5f8" stroke="#5a6776" stroke-width="2"/>
+        <text x="220" y="188" text-anchor="middle" font-size="24" fill="#1b2733" font-family="sans-serif">Antisthenes &#8594; Cynics</text>
+        <rect x="380" y="150" width="220" height="60" rx="12" fill="#f3f5f8" stroke="#5a6776" stroke-width="2"/>
+        <text x="490" y="188" text-anchor="middle" font-size="24" fill="#1b2733" font-family="sans-serif">Plato &#8594; the Academy</text>
+        <rect x="650" y="150" width="220" height="60" rx="12" fill="#f3f5f8" stroke="#5a6776" stroke-width="2"/>
+        <text x="760" y="188" text-anchor="middle" font-size="24" fill="#1b2733" font-family="sans-serif">the Skeptics</text>
+        <line x1="220" y1="210" x2="220" y2="270" stroke="#5a6776" stroke-width="2.5" marker-end="url(#lg)"/>
+        <line x1="490" y1="210" x2="490" y2="270" stroke="#5a6776" stroke-width="2.5" marker-end="url(#lg)"/>
+        <rect x="110" y="270" width="220" height="60" rx="12" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="220" y="300" text-anchor="middle" font-size="24" fill="#1b2733" font-family="sans-serif">Stoics &#8594; modern</text>
+        <text x="220" y="322" text-anchor="middle" font-size="20" fill="#0e9488" font-family="sans-serif">CBT</text>
+        <rect x="380" y="270" width="220" height="60" rx="12" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="490" y="308" text-anchor="middle" font-size="24" fill="#1b2733" font-family="sans-serif">Aristotle &#8594; everything</text>
+        <defs><marker id="lg" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="#5a6776"/></marker></defs>
+      </svg>
+    </div>
+    <p class="muted small" style="margin:4px 0 0">Every school claimed him — and they contradicted each other. Exactly what you'd expect when the inheritance is a <b>question</b>, not an answer.</p>
+    <div class="footer"><span>Socrates · legacy</span><span></span></div>
+  </section>
+
+  <!-- 22 WHAT CHANGED -->
+  <section class="slide">
+    <p class="kicker">Why he matters</p>
+    <h2>Three things changed forever</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Philosophy's subject:</b> from &#8220;what is the cosmos made of?&#8221; to &#8220;how should a human live?&#8221; — ethics became a field you <i>reason</i> about. Cicero: he &#8220;called philosophy down from the heavens.&#8221;</li>
+        <li><b>Philosophy's standard:</b> define your terms; follow the argument wherever it goes — even into the hemlock.</li>
+        <li><b>The martyr template:</b> every thinker persecuted by the state since 399 BC stands in the shadow of that courtroom.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Socrates · what changed</span><span></span></div>
+  </section>
+
+  <!-- 23 TAKEAWAYS -->
+  <section class="slide">
+    <p class="kicker">Key takeaways</p>
+    <h2>What to walk away with</h2>
+    <div class="fill">
+      <ul>
+        <li>The elenchus proves <b>joint inconsistency</b> — never which premise was false. Its product is honest ignorance, not answers.</li>
+        <li>Socratic ignorance is a <b>ranking</b>, not a shrug: knowing the limits of your knowledge is the whole of human wisdom.</li>
+        <li>&#8220;Virtue is knowledge&#8221; lost the akrasia fight — but survives everywhere beliefs are treated as the lever on behavior.</li>
+        <li>Everything we know is secondhand — so <b>grade evidence</b>; don't issue blanket verdicts. And arguments don't have biographies.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Socrates · takeaways</span><span></span></div>
+  </section>
+
+  <!-- 24 NEXT -->
+  <section class="slide center">
+    <p class="kicker">Up next</p>
+    <h1>102 · Plato</h1>
+    <p class="lead">The twenty-something in the back of the courtroom who wrote it all down — and whose fingerprints are on everything you just learned.</p>
+    <div class="footer"><span>Socrates · fin</span><span></span></div>
+  </section>
+
+  <div class="bar" id="bar"></div>
+</div>
+
+<div class="nav">
+  <button onclick="go(-1)">‹ Prev</button>
+  <button onclick="go(1)">Next ›</button>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  const bar=document.getElementById('bar');
+  slides.forEach((s,k)=>{
+    const right=s.querySelector('.footer span:last-child');
+    if(right && k>0){ right.classList.add('pageno'); right.textContent=(k+1)+' / '+slides.length; }
+  });
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+  }
+  function go(d){show(i+d)}
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){show(0)} else if(e.key==='End'){show(slides.length-1)}
+  });
+  show(0);
+
+  (function(){
+    const pop=document.createElement('div'); pop.className='tip-pop'; document.body.appendChild(pop);
+    const place=e=>{ const pad=14, r=pop.getBoundingClientRect();
+      let x=e.clientX+pad, y=e.clientY+pad;
+      if(x+r.width>innerWidth-8) x=e.clientX-r.width-pad;
+      if(y+r.height>innerHeight-8) y=e.clientY-r.height-pad;
+      pop.style.left=x+'px'; pop.style.top=y+'px'; };
+    document.addEventListener('mouseover',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]');
+      if(!t) return; pop.textContent=t.getAttribute('data-tip'); pop.classList.add('show'); place(e); });
+    document.addEventListener('mousemove',e=>{ if(pop.classList.contains('show')) place(e); });
+    document.addEventListener('mouseout',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]');
+      if(t && !t.contains(e.relatedTarget)) pop.classList.remove('show'); });
+  })();
+</script>
+</body>
+</html>

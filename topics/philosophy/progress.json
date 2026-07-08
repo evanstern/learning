@@ -1,0 +1,90 @@
+{
+  "topic": "philosophy",
+  "title": "Basics of Philosophy — Socrates Onward",
+  "updated": "2026-07-07",
+  "mode": "discussion / conceptual, research-grounded (Wikipedia-first grounding per topic and per lesson; no delegated build unless scoped later)",
+  "lifecycle": [
+    "scaffolded",
+    "taught",
+    "spec'd",
+    "built",
+    "decked",
+    "done"
+  ],
+  "lifecycleNotes": {
+    "scaffolded": "folder copied from .template/",
+    "taught": "Socratic session complete; every checklist item demonstrated",
+    "spec'd": "HANDOFF.md written (delegated builds only) — not expected for this topic",
+    "built": "not applicable unless a delegated build is scoped later",
+    "decked": "deck.html + guide.md produced",
+    "done": "all required artifacts exist and verified on disk"
+  },
+  "definitionOfDone": {
+    "always": [
+      "checklist",
+      "rawNotes"
+    ],
+    "decksStandardForEveryLesson": [
+      "deck",
+      "guide"
+    ],
+    "gates": [
+      "a lesson may not be marked done without its required artifacts on disk",
+      "a lesson is taught FROM its grounding (topic-scope research/ first, then lesson-scope) — claims trace to gathered sources, not model recall"
+    ]
+  },
+  "grounding": {
+    "topicVault": "topics/philosophy/research/",
+    "perLesson": "topics/philosophy/<NNN>-<lesson>/research/",
+    "method": "Wikipedia-first, branch outward (SEP/IEP, primary texts) per lesson and per topic; gathered via parallel subagents"
+  },
+  "cursor": {
+    "current": "102-plato",
+    "currentStatus": "scaffolded",
+    "nextAction": "102-plato grounded (research/Plato branch gate green). Teaching in progress: Socratic loop from the grounding, one raw-notes entry per exchange."
+  },
+  "lessons": [
+    {
+      "id": "101-socrates",
+      "n": 101,
+      "title": "Socrates — the examined life and the birth of moral philosophy",
+      "status": "done",
+      "artifacts": {
+        "checklist": true,
+        "rawNotes": true,
+        "handoff": false,
+        "postBuild": false,
+        "deck": true,
+        "guide": true
+      },
+      "motivator": "Start the philosophy series at its conventional hinge: the figure who turned inquiry from nature to how one should live, and whose method (questioning) is also this project's teaching method.",
+      "feedsForward": "Sets up Plato (his student and chief source), the Socratic problem as a lesson in evidence, and the series arc toward Aristotle and the Hellenistic schools."
+    },
+    {
+      "id": "102-plato",
+      "n": 102,
+      "title": "Plato — the Forms, the Republic, and the first system",
+      "status": "scaffolded",
+      "artifacts": {
+        "checklist": true,
+        "rawNotes": true,
+        "handoff": false,
+        "postBuild": false,
+        "deck": false,
+        "guide": false
+      },
+      "motivator": "Socrates asked 'What is X?' and died without answers; Plato is the student who built the first full answer — Forms, the divided soul, the just city — and founded the school that carried it.",
+      "feedsForward": "Sets up Aristotle (trained in, then rebelling against, the Forms), resolves the 101 akrasia debate via the tripartite soul, and plants the Neoplatonism -> Augustine hinge for later in the arc.",
+      "gotchas": [
+        "Learner holds 'akrasia is real' from 101 — the tripartite soul is Plato agreeing with them; use it as vindication, not correction.",
+        "Learner's standing 'language too fuzzy / logic too rigid' thesis maps onto doxa vs. episteme — pull that thread.",
+        "Learner identifies with Protagoras/contrarians; Popper's anti-Plato case is a natural hook for the politics section."
+      ]
+    }
+  ],
+  "parked": [
+    "103-aristotle (candidate)",
+    "pre-Socratics as an optional backfill lesson if the grounding suggests it",
+    "Hellenistic schools (Stoics, Epicureans, Skeptics) — sequence after the grounding research"
+  ]
+}

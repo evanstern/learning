@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Web UI",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "web"],
+      "port": 3104
+    },
+    {
+      "name": "Demo CLI",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "demo"],
+      "port": 0
+    },
+    {
+      "name": "MCP support-crm (stdio)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "mcp:support"],
+      "port": 0
+    },
+    {
+      "name": "MCP billing (stdio)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "mcp:billing"],
+      "port": 0
+    }
+  ]
+}

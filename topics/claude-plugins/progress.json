@@ -1,0 +1,69 @@
+{
+  "topic": "claude-plugins",
+  "title": "Claude Plugins",
+  "updated": "2026-06-25",
+  "mode": "teach-me (build-along possible later; self-building plugin is the stretch goal)",
+  "humanIndex": "topics/claude-plugins/SERIES.md",
+  "lifecycle": [
+    "scaffolded",
+    "taught",
+    "spec'd",
+    "built",
+    "decked",
+    "done"
+  ],
+  "definitionOfDone": {
+    "always": [
+      "checklist.md",
+      "raw-notes.md"
+    ],
+    "decksStandardForEveryLesson": [
+      "deck.html",
+      "guide.md"
+    ],
+    "gates": [
+      "deck built FROM _template/deck.html",
+      "status never past 'built' while deck/guide missing"
+    ]
+  },
+  "cursor": {
+    "current": "101-foundations",
+    "currentStatus": "done",
+    "nextAction": "101 complete. Next: live-iterate educate via the local marketplace, and/or start 102 (hooks & MCP servers in depth)."
+  },
+  "lessons": [
+    {
+      "id": "101-foundations",
+      "n": 101,
+      "title": "Plugin foundations & anatomy (applied to the Learnings project)",
+      "status": "done",
+      "artifacts": {
+        "checklist": true,
+        "rawNotes": true,
+        "deck": true,
+        "guide": true,
+        "handoff": false,
+        "postBuild": false
+      },
+      "motivator": "Evan sees that Learnings is becoming a plugin; needs to understand what a plugin actually is before specing one — and resolve where the CLAUDE.md orchestration layer goes.",
+      "feedsForward": "A spec for the first artifact: the Learnings/educate plugin, ideally one that can build itself.",
+      "decisions": [
+        "Plugin = packaging; the fixed menu (skills/commands/agents/hooks/mcp) does the work; manifest is a label, not a brain.",
+        "CLAUDE.md has no always-on plugin slot -> resolution: the plugin INSTALLS a project CLAUDE.md (always-on for free). Logic -> skills/lesson; always-on copy -> templates/CLAUDE.md planted by skills/start.",
+        "Drop the git pre-commit gate; gate via a Claude Stop hook on auditable artifacts (git-agnostic).",
+        "Reference teach-me/build-me rather than vendoring (revisit later)."
+      ],
+      "gotchas": [
+        "Plugin hooks fire GLOBALLY -> gate must no-op outside educate projects.",
+        "--check flags stale maps (normal mid-work) -> added read-only --gate that blocks only on DoD violations.",
+        "Stop hooks must honor stop_hook_active or they loop forever.",
+        "progress.mjs used import.meta.url as its location -> had to decouple (resolve root via --root/env/walk-up) to live in a plugin.",
+        "Self-build is honest only for structure+manifest+frontmatter; bodies/scripts/templates are authored payload."
+      ],
+      "build": {
+        "location": "/Users/evanstern/Claude/Projects/Code/educate (own git repo, master, v0.1.0) — see topics/claude-plugins/build/README.md pointer",
+        "status": "built + verified end-to-end; packaged as educate.plugin (Cowork) + marketplace.json (Claude Code local-dev)"
+      }
+    }
+  ]
+}

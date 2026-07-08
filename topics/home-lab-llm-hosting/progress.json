@@ -1,0 +1,85 @@
+{
+  "topic": "home-lab-llm-hosting",
+  "title": "Home Lab — Getting More Out of Existing Hardware for Local LLMs",
+  "updated": "2026-07-02",
+  "mode": "discussion / conceptual (no delegated build)",
+  "lifecycle": [
+    "scaffolded",
+    "taught",
+    "spec'd",
+    "built",
+    "decked",
+    "done"
+  ],
+  "lifecycleNotes": {
+    "scaffolded": "folder copied from .template/",
+    "taught": "discussion session complete; every checklist item demonstrated",
+    "spec'd": "HANDOFF.md written (delegated builds only) — not required unless we scope an actual build",
+    "built": "not applicable unless a delegated build is scoped later",
+    "decked": "deck.html + guide.md produced",
+    "done": "all required artifacts exist and verified on disk"
+  },
+  "definitionOfDone": {
+    "always": [
+      "checklist",
+      "rawNotes"
+    ],
+    "decksStandardForEveryLesson": [
+      "deck",
+      "guide"
+    ],
+    "gates": [
+      "a lesson may not be marked done without its required artifacts on disk"
+    ]
+  },
+  "cursor": {
+    "current": "102-emby-lxc-migration",
+    "currentStatus": "taught",
+    "nextAction": "Checklist fully demonstrated. Build deck.html + guide.md (this lesson is procedural/how-to, same no-delegated-build pattern as 101) to reach 'decked' then 'done'. Actual live execution against the Proxmox host/Emby VM still requires explicit per-step confirmation whenever the learner is ready — not part of this lesson's artifacts."
+  },
+  "lessons": [
+    {
+      "id": "101-overview",
+      "n": 101,
+      "title": "Home Lab — Getting More Out of Existing Hardware for Local LLMs",
+      "status": "done",
+      "artifacts": {
+        "checklist": true,
+        "rawNotes": true,
+        "handoff": false,
+        "postBuild": false,
+        "deck": true,
+        "guide": true
+      },
+      "motivator": "Confirmed (raw-notes [2]): learning-first — wants to see what can be squeezed out of existing hardware. Use case is mostly coding today; explicitly frames this Proxmox box as eventually becoming a broader 'AI hub' as the home lab expands (agent frameworks / 'claws' / 'hermes' stacks later). Real hardware: Ryzen 7 7700, 128GB DDR5 (all 4 DIMM slots full), one RTX 4060 Ti (8GB VRAM, confirmed via PCI BAR), currently passed through exclusively to the `emby` VM. Design decision made (raw-notes [4]): restructure GPU sharing via LXC (migrating Emby from VM to LXC) rather than reclaiming the GPU outright or upgrading now — chosen specifically to preserve future flexibility for a hardware upgrade. Final stack decided: llama.cpp + Qwen3-7B + Q4_K_M, hard-capped around ~7GB VRAM to leave Emby headroom (raw-notes [9]-[14]). Checklist fully demonstrated as of raw-notes [16] — every service (including the new LLM LXC) follows the same per-service resource-isolation pattern already governing the box.",
+      "openThreads": [
+        "What the `openclaw` VM is actually running — name suggests it may already be agent/'claws'-related; never asked at the guest level.",
+        "Broader VM/LXC reconfiguration the learner mentioned in passing ([16], 'already going to reconfigure and delete/unhost a bunch of stuff') — real, but unscoped; likely its own future lesson/session.",
+        "Hardware upgrade pathway (RAM 128→192GB via 4x48GB swap — needs Gigabyte QVL verification for the B650M C V2-Y1 at BIOS F33; GPU tier upgrade; small dedicated Emby transcode card in the free PCIE3 x4 slot) — real findings gathered in raw-notes [5], intentionally deferred in [6] pending PSU wattage/connectors and case clearance."
+      ]
+    },
+    {
+      "id": "102-emby-lxc-migration",
+      "n": 102,
+      "title": "Migrating Emby from a VM to a Shared-GPU LXC",
+      "status": "taught",
+      "artifacts": {
+        "checklist": true,
+        "rawNotes": true,
+        "handoff": false,
+        "postBuild": false,
+        "deck": true,
+        "guide": false
+      },
+      "motivator": "Direct follow-on from lesson 101's GPU-sharing decision. Expanded significantly mid-lesson: learner provided two real repos (`infinity-node` legacy, `infinitynode.media` target Ansible/Terraform rewrite) plus 7 architecture non-negotiables, which grounded the plan in real live-host verification rather than repo assumptions. Real access established: root@Proxmox host, coda@openclaw (actual Ansible control node), Portainer API tokens. Verified live: `/opt/stacks` (the new repo's deployment convention) doesn't exist on Emby/Arr at all; Emby's real config path, real CIFS (not NFS) media mount; two live unrelated problems (crash-looping Watchtower, GPU driver/library mismatch). Architecture decided: Option A (LXC for both Emby and the new AI host), documented as `docs/adr/023-lxc-for-gpu-sharing.md` in the learner's local `infinitynode.media` clone. Final Emby stack decided: embyserver + traefik + fail2ban + tailscale + newt + DIUN, no Portainer, no Watchtower, unprivileged LXC. Scope explicitly bounded by the learner: fix Emby+AI-VM GPU sharing now; the full VM-by-VM rebuild (network rearchitecture, VM standardization, Ansible-from-day-one) is a separate, later initiative.",
+      "openThreads": [
+        "Exact cgroup device major numbers for GPU bind-mounts — confirm against `ls -la /dev/nvidia*` after the host driver install.",
+        "Specific max-context-length value for the future AI-LXC's ~7GB VRAM cap (carried over from lesson 101, still not computed).",
+        "`downloads` (VM 101) and `arr` (VM 102) both have broken auxiliary access (Ansible tmp-dir permissions; Portainer API tokens returning invalid JWT) — not this lesson's scope, but real and unresolved.",
+        "Actual live execution of this migration against the Proxmox host/Emby VM — needs explicit per-step confirmation whenever the learner is ready; not part of this lesson's artifacts. Learner specifically wants it scheduled after midnight to minimize household impact.",
+        "The full VM-by-VM rebuild in `infinitynode.media` (network rearchitecture, VM standardization, Ansible-from-day-one for every VM) — explicitly parked as a separate, later initiative."
+      ]
+    }
+  ],
+  "parked": []
+}

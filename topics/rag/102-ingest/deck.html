@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG 102 — Ingestion: HTML → chunks</title>
+<!--
+  Built from topics/_template/deck.html (house style; see CLAUDE.md → "Deck & guide conventions").
+  Single self-contained file · no CDN · ⌘P → "Save as PDF" for a handout.
+  Decks are built at lesson END so they can fold in live build findings — see slide 8.
+-->
+<style>
+  :root{
+    --ink:#1b2733; --muted:#5a6776; --accent:#4f46e5; --accent2:#0e9488;
+    --line:#dde3ea; --chip:#f3f5f8; --card:#ffffff; --stage:#e7ebf1; --warn:#b4530a;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--stage);font-family:var(--sans);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .deck{width:min(96vw,1180px);aspect-ratio:16/9;position:relative}
+  .slide{position:absolute;inset:0;background:var(--card);border-radius:18px;
+    box-shadow:0 18px 50px rgba(20,30,50,.16);padding:52px 60px;display:none;
+    flex-direction:column;overflow:hidden}
+  .slide.active{display:flex}
+  .kicker{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 14px}
+  h1{font-size:46px;line-height:1.08;margin:0 0 18px;letter-spacing:-.02em}
+  h2{font-size:34px;line-height:1.14;margin:0 0 22px;letter-spacing:-.01em}
+  p,li{font-size:22px;line-height:1.55;color:var(--ink)}
+  .muted{color:var(--muted)}
+  ul{margin:6px 0 0;padding-left:22px}
+  li{margin:13px 0}
+  li b{color:var(--ink)}
+  .lead{font-size:25px;line-height:1.5;color:var(--muted);max-width:62ch}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:start}
+  .fill{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .center{align-items:center;text-align:center;justify-content:center}
+  .chip{display:inline-block;background:var(--chip);border:1px solid var(--line);
+    border-radius:999px;padding:5px 14px;font-size:15px;font-weight:600;margin:4px 6px 4px 0}
+  code,.mono{font-family:var(--mono);background:var(--chip);border:1px solid var(--line);
+    border-radius:6px;padding:1px 7px;font-size:.92em}
+  .callout{border-left:4px solid var(--accent);background:#f5f5ff;border-radius:0 10px 10px 0;
+    padding:16px 20px;font-size:20px;margin-top:10px}
+  .warn{border-left-color:var(--warn);background:#fff6ee}
+  .ok{border-left-color:var(--accent2);background:#eefaf7}
+  .big{font-size:30px;font-weight:700;letter-spacing:-.01em}
+  .accent{color:var(--accent)} .accent2{color:var(--accent2)} .warnc{color:var(--warn)}
+  svg{width:100%;height:auto;display:block}
+  .footer{position:absolute;left:60px;right:60px;bottom:18px;display:flex;
+    justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+  .footer .pageno{font-variant-numeric:tabular-nums}
+  .bar{position:absolute;left:0;bottom:0;height:4px;background:var(--accent);
+    border-radius:0 0 0 18px;transition:width .25s ease}
+  .nav{position:fixed;bottom:14px;right:18px;display:flex;gap:8px;z-index:10}
+  .nav button{font-family:var(--sans);font-size:15px;border:1px solid var(--line);
+    background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;color:var(--ink)}
+  .nav button:hover{background:var(--chip)}
+  .title-wrap{display:flex;flex-direction:column;justify-content:center;height:100%}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
+  .pcard{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .pcard h3{margin:0 0 6px;font-size:20px}
+  .pcard .who{font-size:14px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em}
+  .small{font-size:18px}
+  .rank{display:flex;align-items:center;gap:12px;padding:8px 14px;border:1px solid var(--line);
+    border-radius:9px;margin:7px 0;font-size:18px;background:#fff}
+  .rank .n{font-family:var(--mono);font-weight:700;color:var(--muted);width:26px}
+  .rank.bad{background:#fff6f4;border-color:#f0cfc6}
+  .rank.good{background:#eefaf7;border-color:#bfe6dd}
+  .rank .tag{margin-left:auto;font-size:15px;font-weight:700}
+  .rank.bad .tag{color:var(--warn)} .rank.good .tag{color:var(--accent2)}
+  /* Lightweight hover tooltip — any element (HTML or SVG) with a data-tip attribute. */
+  [data-tip]{cursor:help}
+  .tip-pop{position:fixed;z-index:50;max-width:330px;background:var(--ink);color:#fff;
+    font-size:14px;line-height:1.45;padding:10px 13px;border-radius:9px;pointer-events:none;
+    box-shadow:0 8px 24px rgba(20,30,50,.28);opacity:0;transform:translateY(4px);
+    transition:opacity .12s ease,transform .12s ease}
+  .tip-pop.show{opacity:1;transform:translateY(0)}
+  @media print{
+    body{display:block;background:#fff;overflow:visible}
+    .deck{width:100%;aspect-ratio:auto}
+    .slide{display:flex;position:relative;page-break-after:always;box-shadow:none;
+      border:1px solid var(--line);margin-bottom:18px;height:90vh}
+    .nav{display:none}
+    .tip-pop{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide active">
+    <div class="title-wrap">
+      <p class="kicker">Build-along course · Lesson 102 of 8</p>
+      <h1>RAG 102<br>Ingestion: HTML → chunks</h1>
+      <p class="lead">What a chunk should <i>be</i>, why "what is a chunk?" is the central decision of this stage, and how structure-aware chunking killed the goblin-boundary noise on day one.</p>
+      <p class="muted small" style="margin-top:26px">the-stacks v2 · a D&amp;D corpus RAG · scan solo or follow along live</p>
+    </div>
+    <div class="footer"><span>RAG 102</span><span>↦ arrow keys / space to advance</span></div>
+  </section>
+
+  <!-- 2 WHY INGESTION FIRST -->
+  <section class="slide">
+    <p class="kicker">Where we are</p>
+    <h2>Ingestion is the first stage — and errors here cascade the furthest</h2>
+    <div class="two fill">
+      <div>
+        <p>101 left us a runnable skeleton with a deliberately crude ingest: <b>fixed-size windows</b>. The problem showed up immediately on the Monster Manual "G" page.</p>
+        <div class="callout warn"><b>Fixed windows split across monster boundaries</b> — a single chunk straddling the end of <i>Githyanki</i> and the start of <i>Goblin</i>. That pollutes the embedding <i>and</i> the citation.</div>
+      </div>
+      <div>
+        <div class="callout"><b>The cascade (from 101):</b> you can't prompt your way to context that was never cleanly retrieved. Garbage chunks are an <i>upstream</i> error — everything downstream inherits them.</div>
+        <p class="small muted" style="margin-top:14px">So ingest is the highest-leverage place to get the units right. Fix the chunk, and retrieval/generation get a clean substrate.</p>
+      </div>
+    </div>
+    <div class="footer"><span>RAG 102 · Why ingest first</span><span></span></div>
+  </section>
+
+  <!-- 3 THE CENTRAL DECISION -->
+  <section class="slide">
+    <p class="kicker">The central design decision</p>
+    <h2>"What is a chunk?" is a precision ↔ completeness tradeoff</h2>
+    <div class="fill">
+      <svg viewBox="0 0 980 150" role="img" aria-label="Precision versus completeness tradeoff across chunk sizes">
+        <line x1="60" y1="80" x2="920" y2="80" stroke="#5a6776" stroke-width="2" marker-start="url(#a3)" marker-end="url(#a3)"/>
+        <text x="60" y="48" font-size="17" font-weight="700" fill="#1b2733">tiny chunks</text>
+        <text x="60" y="112" font-size="14" fill="#5a6776">sharp &amp; on-topic · but answer is split across many</text>
+        <text x="920" y="48" text-anchor="end" font-size="17" font-weight="700" fill="#1b2733">huge chunks</text>
+        <text x="920" y="112" text-anchor="end" font-size="14" fill="#5a6776">whole answer in one · but noisy &amp; low-precision</text>
+        <circle cx="490" cy="80" r="9" fill="#0e9488"/>
+        <text x="490" y="138" text-anchor="middle" font-size="14" font-weight="700" fill="#0e9488">the goal: smallest unit that still holds a whole answer</text>
+        <defs><marker id="a3" markerWidth="10" markerHeight="10" refX="5" refY="3" orient="auto-start-reverse"><path d="M0,0 L7,3 L0,6 Z" fill="#5a6776"/></marker></defs>
+      </svg>
+      <div class="callout" style="margin-top:24px">Get this wrong and no embedder or reranker can save you: too small and the answer is scattered; too large and the real signal drowns in noise.</div>
+    </div>
+    <div class="footer"><span>RAG 102 · What is a chunk</span><span></span></div>
+  </section>
+
+  <!-- 4 THREE STRATEGIES -->
+  <section class="slide">
+    <p class="kicker">The design space</p>
+    <h2>Three ways to chunk — what each optimizes</h2>
+    <div class="fill">
+      <div class="grid3">
+        <div class="pcard"><div class="who">Fixed-size</div><h3>N tokens, slide</h3><p class="small">Dead simple, cheap, deterministic. Ignores meaning — happily cuts mid-sentence and across entities. <span class="warnc">What 101 used.</span></p></div>
+        <div class="pcard"><div class="who">Structure-aware</div><h3>Split on the DOM</h3><p class="small">Boundaries come from the document's own headings. One monster = one chunk. Cheap, deterministic, and the heading <i>is</i> the citation. <span class="accent2">Our choice.</span></p></div>
+        <div class="pcard"><div class="who" data-tip="Semantic chunking: use a model to find topic shifts — e.g. embed every sentence and cut where adjacent sentences stop being similar. Highest recall in vendor benchmarks, but it must embed the whole corpus at ingest time, so it's the most expensive option.">Semantic&#160;<span style="display:inline-block;background:#0e9488;color:#fff;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;font-size:13px;font-weight:700">?</span></div><h3>Model finds shifts</h3><p class="small">Cut where meaning changes. Highest recall in benchmarks — but embeds every sentence at ingest. Expensive.</p></div>
+      </div>
+      <div class="callout ok" style="margin-top:20px"><b>Why structure-aware here:</b> D&amp;D Beyond pages are rigidly templated, so the structure already <i>is</i> the semantics — we get most of semantic chunking's benefit at fixed-chunking's cost.</div>
+    </div>
+    <div class="footer"><span>RAG 102 · Three strategies</span><span></span></div>
+  </section>
+
+  <!-- 5 EVIDENCE -->
+  <section class="slide">
+    <p class="kicker">The evidence, honestly read</p>
+    <h2>Ground boundaries in structure — not in a magic token count</h2>
+    <div class="two fill">
+      <div>
+        <p class="big accent2" style="margin-bottom:8px">Verified</p>
+        <ul class="small">
+          <li>Semantic chunking out-recalls fixed splitting (Chroma, ~0.91 vs ~0.85) — <i>vendor, single benchmark</i>, so directional not portable.</li>
+          <li>The win comes from boundaries that respect meaning — which structure also gives us, cheaply.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="big warnc" style="margin-bottom:8px">Killed as folk wisdom</p>
+        <ul class="small">
+          <li>"Optimal chunk size is 200–500 tokens" — no primary source.</li>
+          <li>"512 tokens, 10–20% overlap is the default" — no controlled benchmark.</li>
+        </ul>
+        <div class="callout warn" style="margin-top:10px">So we don't pick a number — we pick a <b>boundary rule</b> (the heading), and treat size as a guard to tune later (107).</div>
+      </div>
+    </div>
+    <div class="footer"><span>RAG 102 · Evidence vs folk wisdom</span><span></span></div>
+  </section>
+
+  <!-- 6 THE RULE WE BUILT -->
+  <section class="slide">
+    <p class="kicker">The design, built</p>
+    <h2>One semantic unit per chunk — size is a guard, not the boundary</h2>
+    <div class="fill">
+      <ul>
+        <li><b>A chunk = one leaf heading section</b> — for the Monster Manual, one monster. Boundaries parsed from the DOM heading hierarchy.</li>
+        <li><b>Size guard, not size rule:</b> an oversized section <i>sub-splits</i> recursively under a generous max; a trivially tiny fragment <i>merges</i> into its parent. The numbers are guards to tune in 107, never magic constants.</li>
+        <li><b>Atomic blocks stay whole</b> — a stat block is never cut in half, even if the size guard fires around it.</li>
+      </ul>
+      <div class="callout ok"><b>Result on the "G" page:</b> 49 sections → 48 clean chunks — one intact chunk per monster, plus a "group overview" chunk where a heading carries its own lore (e.g. <i>Goblins</i>).</div>
+    </div>
+    <div class="footer"><span>RAG 102 · The chunking rule</span><span></span></div>
+  </section>
+
+  <!-- 7 METADATA SIDECAR -->
+  <section class="slide">
+    <p class="kicker">Metadata, for near-free</p>
+    <h2>The heading you split on <i>is</i> the citation</h2>
+    <div class="two fill">
+      <div>
+        <p>Structure-aware chunking hands us metadata as a side effect. We populate the <code>meta</code> bag the 101 schema already reserved — <b>no migration</b>:</p>
+        <ul class="small">
+          <li><code>source</code> — the book (e.g. "Monster Manual")</li>
+          <li><code>breadcrumbs[]</code> — the heading trail</li>
+          <li><code>chunkId</code> — stable, deterministic id</li>
+          <li><code>kind</code> — statblock / prose / mixed</li>
+        </ul>
+      </div>
+      <div>
+        <div class="callout"><b>Breadcrumbs do double duty:</b> the joined trail <span class="mono small">Monster Manual › G | Monsters › Goblins › Goblin</span> is the human-readable citation <i>and</i> a future filter key for hybrid retrieval (104).</div>
+        <p class="small muted" style="margin-top:14px">Deferred on purpose: typed entity fields (CR, creature type) and a normalized monster DB — non-breaking to add later, since <code>meta</code> is a JSON bag. Baselines first.</p>
+      </div>
+    </div>
+    <div class="footer"><span>RAG 102 · Metadata sidecar</span><span></span></div>
+  </section>
+
+  <!-- 8 LIVE BUILD FINDINGS -->
+  <section class="slide">
+    <p class="kicker warnc">What the build actually taught us</p>
+    <h2>Two assumptions the real DOM falsified</h2>
+    <div class="two fill">
+      <div>
+        <div class="callout warn"><b>1 · There are no tables.</b> The spec said "keep tables whole." But DDB renders stat blocks as <span class="mono small">&lt;div class="…stat-block-background"&gt;</span> — <b>zero</b> <span class="mono small">&lt;table&gt;</span> elements on the page. A "don't split a table row" rule would have matched nothing.</div>
+        <p class="small muted" style="margin-top:8px">Lesson: "structure-aware" means <i>the page's</i> structure — which you have to actually inspect, not the structure you assumed.</p>
+      </div>
+      <div>
+        <div class="callout warn"><b>2 · 101's "idempotent re-ingest" was a myth.</b> sqlite-vec's <span class="mono small">vec0</span> table ignores <span class="mono small">INSERT OR REPLACE</span>, so re-ingesting into a non-empty DB <b>crashed</b>. It only ever "worked" against an empty DB — i.e. it was never tested.</div>
+        <p class="small muted" style="margin-top:8px">Lesson: an "idempotent" claim you never re-ran is a claim you haven't tested. Fixed with a DELETE-then-INSERT.</p>
+      </div>
+    </div>
+    <div class="footer"><span>RAG 102 · Live build findings</span><span></span></div>
+  </section>
+
+  <!-- 9 BEFORE / AFTER -->
+  <section class="slide">
+    <p class="kicker">Did it work?</p>
+    <h2>Clean chunk content now — but the ranking is still 103's job</h2>
+    <div class="two fill">
+      <div>
+        <p class="small muted" style="margin:0 0 6px">query: "what environment do goblins make their home in?"</p>
+        <div class="rank good"><span class="n">1</span> Goblins — "lair in caves…" (clean, whole) <span class="tag">✓</span></div>
+        <div class="rank bad"><span class="n">2</span> Grimlock <span class="tag">✕</span></div>
+        <div class="rank bad"><span class="n">3</span> Gith <span class="tag">✕</span></div>
+        <p class="small muted" style="margin-top:10px">Top hit is now a clean, goblin-only chunk with the answer intact — no more straddling.</p>
+      </div>
+      <div>
+        <div class="callout ok"><b>A clean split of blame:</b> the <i>straddling &amp; citation pollution</i> was a <b>chunking</b> artifact — fixed here. The <i>wrong neighbors</i> at #2/#3 are an <b>embedding</b> artifact — still the dumb hashing embedder.</div>
+        <p class="small muted" style="margin-top:14px">102 fixed top-hit content quality; it did <i>not</i> move the ranking of neighbors. That's exactly the motivation for <b>103</b>.</p>
+      </div>
+    </div>
+    <div class="footer"><span>RAG 102 · Before / after</span><span></span></div>
+  </section>
+
+  <!-- 10 BIGGER PICTURE -->
+  <section class="slide">
+    <p class="kicker">The bigger picture</p>
+    <h2>Chunking choices ripple all the way to citation quality</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Downstream reach:</b> chunk boundaries shape what can be retrieved, what a reranker sees, what the LLM is grounded in, and what a citation can point at. Get them wrong upstream and every later stage inherits it.</li>
+        <li><b>No portable "best" size:</b> it's corpus- and task-dependent — so we set a boundary <i>rule</i> now and measure the guard numbers on our own corpus in 107.</li>
+        <li><b>Why D&amp;D is generous:</b> rigid, standardized structure makes structure-aware chunking unusually clean — the page hands us boundaries and citations for free.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>RAG 102 · Bigger picture</span><span></span></div>
+  </section>
+
+  <!-- 11 TAKEAWAYS -->
+  <section class="slide">
+    <p class="kicker">Key takeaways</p>
+    <h2>What to walk away with</h2>
+    <div class="fill">
+      <ul>
+        <li><b>The decision:</b> "what is a chunk?" — the smallest unit that still holds a whole answer (precision ↔ completeness).</li>
+        <li><b>The rule:</b> boundaries from structure, size as a guard (sub-split / merge), atomic blocks kept whole.</li>
+        <li><b>Free metadata:</b> the heading trail is both citation and future filter key — no schema change.</li>
+        <li><b>Inspect reality:</b> there were no tables; an untested "idempotent" claim was false. Build against the real DOM, not the assumed one.</li>
+        <li><b>Clean blame:</b> 102 fixed chunk <i>content</i>; neighbor <i>ranking</i> is 103's embedding job.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>RAG 102 · Takeaways</span><span></span></div>
+  </section>
+
+  <!-- 12 NEXT -->
+  <section class="slide center">
+    <p class="kicker">Up next</p>
+    <h1>RAG 103</h1>
+    <p class="lead">Embeddings + the vector store: what an embedding really is, why cosine over a unit sphere, what a vector DB actually does (and ANN's recall/latency dial) — swapping the dumb hashing embedder for a real one to fix those wrong neighbors.</p>
+    <div class="footer"><span>RAG 102 · fin</span><span></span></div>
+  </section>
+
+  <div class="bar" id="bar"></div>
+</div>
+
+<div class="nav">
+  <button onclick="go(-1)">‹ Prev</button>
+  <button onclick="go(1)">Next ›</button>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  const bar=document.getElementById('bar');
+  // Slide numbers: write "n / total" into each slide's footer right span (skip the title).
+  slides.forEach((s,k)=>{
+    const right=s.querySelector('.footer span:last-child');
+    if(right && k>0){ right.classList.add('pageno'); right.textContent=(k+1)+' / '+slides.length; }
+  });
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+  }
+  function go(d){show(i+d)}
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){show(0)} else if(e.key==='End'){show(slides.length-1)}
+  });
+  show(0);
+
+  // Lightweight tooltip: styled popover for any [data-tip] element (works on SVG too).
+  (function(){
+    const pop=document.createElement('div'); pop.className='tip-pop'; document.body.appendChild(pop);
+    const place=e=>{ const pad=14, r=pop.getBoundingClientRect();
+      let x=e.clientX+pad, y=e.clientY+pad;
+      if(x+r.width>innerWidth-8) x=e.clientX-r.width-pad;
+      if(y+r.height>innerHeight-8) y=e.clientY-r.height-pad;
+      pop.style.left=x+'px'; pop.style.top=y+'px'; };
+    document.addEventListener('mouseover',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]');
+      if(!t) return; pop.textContent=t.getAttribute('data-tip'); pop.classList.add('show'); place(e); });
+    document.addEventListener('mousemove',e=>{ if(pop.classList.contains('show')) place(e); });
+    document.addEventListener('mouseout',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]');
+      if(t && !t.contains(e.relatedTarget)) pop.classList.remove('show'); });
+  })();
+</script>
+</body>
+</html>

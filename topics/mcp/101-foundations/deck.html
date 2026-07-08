@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP 101 — Foundations &amp; Architecture</title>
+<style>
+  :root{
+    --ink:#1b2733; --muted:#5a6776; --accent:#4f46e5; --accent2:#0e9488;
+    --line:#dde3ea; --chip:#f3f5f8; --card:#ffffff; --stage:#e7ebf1; --warn:#b4530a;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--stage);font-family:var(--sans);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .deck{width:min(96vw,1180px);aspect-ratio:16/9;position:relative}
+  .slide{position:absolute;inset:0;background:var(--card);border-radius:18px;
+    box-shadow:0 18px 50px rgba(20,30,50,.16);padding:52px 60px;display:none;
+    flex-direction:column;overflow:hidden}
+  .slide.active{display:flex}
+  .kicker{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 14px}
+  h1{font-size:46px;line-height:1.08;margin:0 0 18px;letter-spacing:-.02em}
+  h2{font-size:33px;line-height:1.12;margin:0 0 20px;letter-spacing:-.01em}
+  p,li{font-size:20px;line-height:1.5;color:var(--ink)}
+  .muted{color:var(--muted)}
+  ul{margin:6px 0 0;padding-left:22px}
+  li{margin:11px 0}
+  li b{color:var(--ink)}
+  .lead{font-size:23px;color:var(--muted);max-width:62ch}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:start}
+  .fill{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .center{align-items:center;text-align:center;justify-content:center}
+  .chip{display:inline-block;background:var(--chip);border:1px solid var(--line);
+    border-radius:999px;padding:5px 14px;font-size:15px;font-weight:600;margin:4px 6px 4px 0}
+  code,.mono{font-family:var(--mono);background:var(--chip);border:1px solid var(--line);
+    border-radius:6px;padding:1px 7px;font-size:.92em}
+  .callout{border-left:4px solid var(--accent);background:#f5f5ff;border-radius:0 10px 10px 0;
+    padding:16px 20px;font-size:19px;margin-top:10px}
+  .warn{border-left-color:var(--warn);background:#fff6ee}
+  .big{font-size:30px;font-weight:700;letter-spacing:-.01em}
+  .accent{color:var(--accent)} .accent2{color:var(--accent2)} .warnc{color:var(--warn)}
+  svg{width:100%;height:auto;display:block}
+  .footer{position:absolute;left:60px;right:60px;bottom:18px;display:flex;
+    justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+  .bar{position:absolute;left:0;bottom:0;height:4px;background:var(--accent);
+    border-radius:0 0 0 18px;transition:width .25s ease}
+  .nav{position:fixed;bottom:14px;right:18px;display:flex;gap:8px;z-index:10}
+  .nav button{font-family:var(--sans);font-size:15px;border:1px solid var(--line);
+    background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;color:var(--ink)}
+  .nav button:hover{background:var(--chip)}
+  .title-wrap{display:flex;flex-direction:column;justify-content:center;height:100%}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
+  .pcard{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .pcard h3{margin:0 0 6px;font-size:20px}
+  .pcard .who{font-size:14px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em}
+  .small{font-size:17px}
+  @media print{
+    body{display:block;background:#fff;overflow:visible}
+    .deck{width:100%;aspect-ratio:auto}
+    .slide{display:flex;position:relative;page-break-after:always;box-shadow:none;
+      border:1px solid var(--line);margin-bottom:18px;height:90vh}
+    .nav{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide active">
+    <div class="title-wrap">
+      <p class="kicker">A practical primer · Part 1 of 2</p>
+      <h1>MCP 101<br>Foundations &amp; Architecture</h1>
+      <p class="lead">What the Model Context Protocol is, the problem it actually solves, and how the host / client / server pieces fit together.</p>
+      <p class="muted small" style="margin-top:26px">Internal teaching deck · technical audience · scan it solo or follow along live</p>
+    </div>
+    <div class="footer"><span>MCP 101</span><span>↦ arrow keys / space to advance</span></div>
+  </section>
+
+  <!-- 2 WHAT IS MCP -->
+  <section class="slide">
+    <p class="kicker">The one-liner</p>
+    <h2>MCP is a standard protocol that lets any LLM app talk to any tool or data source</h2>
+    <div class="fill">
+      <p class="lead">Think of it as <b>USB-C for AI applications</b>: one connector spec, so a model-driven app and an external capability can interoperate without bespoke, per-pair integration code.</p>
+      <div class="callout" style="margin-top:24px">Today's path: <b>the problem</b> → <b>why now</b> → <b>the three primitives</b> → <b>the architecture</b> → <b>transport &amp; lifecycle</b>.</div>
+    </div>
+    <div class="footer"><span>MCP 101 · What is it</span><span></span></div>
+  </section>
+
+  <!-- 3 THE PROBLEM -->
+  <section class="slide">
+    <p class="kicker">The problem</p>
+    <h2>Before a standard, every tool was bespoke glue</h2>
+    <div class="two fill">
+      <div>
+        <p>You could already wire tools into a model with plain function-calling. So why a protocol?</p>
+        <ul>
+          <li>Nothing was <b>portable</b>. Each app integrated each tool its own way.</li>
+          <li>"I like what your tool <i>does</i>, but I have to re-translate <i>how</i> it does it to fit my app."</li>
+          <li>Every client × every tool = a fresh, hand-maintained integration.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="callout"><b>The pain in one word:</b> re-implementation. The ecosystem kept rebuilding the same connections, one client-tool pair at a time.</div>
+        <p class="small muted" style="margin-top:18px">Note: this is the same reason we standardized on USB, HTTP, and language servers (LSP). Sound familiar?</p>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 101 · The problem</span><span></span></div>
+  </section>
+
+  <!-- 4 NxM DIAGRAM -->
+  <section class="slide">
+    <p class="kicker">Why a standard matters</p>
+    <h2>M×N bespoke integrations collapse to M+N</h2>
+    <div class="fill">
+      <svg viewBox="0 0 980 380" role="img" aria-label="M times N integrations versus M plus N with MCP">
+        <text x="20" y="26" font-size="17" font-weight="700" fill="#1b2733">Before — every client ✕ every tool (M×N)</text>
+        <!-- left clients -->
+        <g font-size="13" text-anchor="middle">
+          <rect x="20" y="60" width="120" height="34" rx="7" fill="#f3f5f8" stroke="#dde3ea"/><text x="80" y="82" fill="#1b2733">Claude Code</text>
+          <rect x="20" y="150" width="120" height="34" rx="7" fill="#f3f5f8" stroke="#dde3ea"/><text x="80" y="172" fill="#1b2733">Cursor</text>
+          <rect x="20" y="240" width="120" height="34" rx="7" fill="#f3f5f8" stroke="#dde3ea"/><text x="80" y="262" fill="#1b2733">coda-lite</text>
+          <rect x="300" y="60" width="120" height="34" rx="7" fill="#f3f5f8" stroke="#dde3ea"/><text x="360" y="82" fill="#1b2733">GitHub</text>
+          <rect x="300" y="150" width="120" height="34" rx="7" fill="#f3f5f8" stroke="#dde3ea"/><text x="360" y="172" fill="#1b2733">Postgres</text>
+          <rect x="300" y="240" width="120" height="34" rx="7" fill="#f3f5f8" stroke="#dde3ea"/><text x="360" y="262" fill="#1b2733">Figma</text>
+        </g>
+        <g stroke="#b9c1cc" stroke-width="1">
+          <line x1="140" y1="77" x2="300" y2="77"/><line x1="140" y1="77" x2="300" y2="167"/><line x1="140" y1="77" x2="300" y2="257"/>
+          <line x1="140" y1="167" x2="300" y2="77"/><line x1="140" y1="167" x2="300" y2="167"/><line x1="140" y1="167" x2="300" y2="257"/>
+          <line x1="140" y1="257" x2="300" y2="77"/><line x1="140" y1="257" x2="300" y2="167"/><line x1="140" y1="257" x2="300" y2="257"/>
+        </g>
+        <text x="230" y="320" font-size="15" text-anchor="middle" fill="#5a6776">3 × 3 = 9 integrations</text>
+
+        <line x1="500" y1="40" x2="500" y2="300" stroke="#dde3ea" stroke-dasharray="5 5"/>
+
+        <text x="560" y="26" font-size="17" font-weight="700" fill="#1b2733">After — everyone speaks MCP (M+N)</text>
+        <g font-size="13" text-anchor="middle">
+          <rect x="560" y="60" width="116" height="32" rx="7" fill="#f3f5f8" stroke="#dde3ea"/><text x="618" y="81" fill="#1b2733">Claude Code</text>
+          <rect x="560" y="155" width="116" height="32" rx="7" fill="#f3f5f8" stroke="#dde3ea"/><text x="618" y="176" fill="#1b2733">Cursor</text>
+          <rect x="560" y="250" width="116" height="32" rx="7" fill="#f3f5f8" stroke="#dde3ea"/><text x="618" y="271" fill="#1b2733">coda-lite</text>
+          <rect x="844" y="60" width="116" height="32" rx="7" fill="#f3f5f8" stroke="#dde3ea"/><text x="902" y="81" fill="#1b2733">GitHub</text>
+          <rect x="844" y="155" width="116" height="32" rx="7" fill="#f3f5f8" stroke="#dde3ea"/><text x="902" y="176" fill="#1b2733">Postgres</text>
+          <rect x="844" y="250" width="116" height="32" rx="7" fill="#f3f5f8" stroke="#dde3ea"/><text x="902" y="271" fill="#1b2733">Figma</text>
+        </g>
+        <rect x="740" y="148" width="80" height="46" rx="9" fill="#eef0ff" stroke="#4f46e5" stroke-width="1.5"/>
+        <text x="780" y="176" font-size="15" font-weight="700" text-anchor="middle" fill="#4f46e5">MCP</text>
+        <g stroke="#4f46e5" stroke-width="1.1">
+          <line x1="676" y1="76" x2="742" y2="158"/><line x1="676" y1="171" x2="740" y2="171"/><line x1="676" y1="266" x2="742" y2="184"/>
+          <line x1="820" y1="158" x2="844" y2="76"/><line x1="820" y1="171" x2="844" y2="171"/><line x1="820" y1="184" x2="844" y2="266"/>
+        </g>
+        <text x="760" y="320" font-size="15" text-anchor="middle" fill="#5a6776">3 + 3 = 6, each built once</text>
+      </svg>
+      <div class="callout">Integration cost goes from <b>O(n²)</b> to <b>O(n)</b>. Quadratic kills ecosystems; linear grows them. That gap <i>is</i> "portability."</div>
+    </div>
+    <div class="footer"><span>MCP 101 · M×N → M+N</span><span></span></div>
+  </section>
+
+  <!-- 5 WHY NOW -->
+  <section class="slide">
+    <p class="kicker">Why now (the deep reason)</p>
+    <h2>The "client" stopped being a developer — it became the model</h2>
+    <div class="two fill">
+      <div>
+        <p>O(n²) integration pain isn't new. Drivers, plugins, and APIs have had it forever. So why did <i>this</i> standard erupt for LLMs?</p>
+        <ul>
+          <li>Old world: a <b>human dev</b> wires a known integration once, documents it, done. Ad-hoc is fine.</li>
+          <li>New world: an <b>autonomous model</b> does "everything everywhere," and you can't hand-script every path in advance.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="callout"><b>Consequence:</b> tools must <b>describe themselves</b> — names, descriptions, JSON schemas the <i>model</i> reads at runtime to decide how to use them.</div>
+        <p class="small" style="margin-top:16px">MCP is built for a consumer that <b>discovers and reasons about tools on the fly</b>, not a dev reading docs and hardcoding calls.</p>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 101 · Why now</span><span></span></div>
+  </section>
+
+  <!-- 6 THREE PRIMITIVES -->
+  <section class="slide">
+    <p class="kicker">The solution · design</p>
+    <h2>Three primitives the server exposes — each triggered by a <span class="accent">different actor</span></h2>
+    <div class="grid3 fill">
+      <div class="pcard"><div class="who">Model-controlled</div><h3>Tools</h3><p class="small">Server lists them; the <b>model</b> decides to call one. Actions &amp; side effects.</p><p class="small" style="color:var(--muted);font-family:var(--mono);font-size:13px;margin-top:6px">tools/list · tools/call</p></div>
+      <div class="pcard"><div class="who">App-controlled</div><h3>Resources</h3><p class="small">Server lists readable data; the <b>host app</b> decides what to read into context — not the model, not the user.</p><p class="small" style="color:var(--muted);font-family:var(--mono);font-size:13px;margin-top:6px">resources/list · resources/read</p></div>
+      <div class="pcard"><div class="who">User-controlled</div><h3>Prompts</h3><p class="small">Server lists templates; the <b>user</b> fires one — a slash command like <code>/review-pr</code>.</p><p class="small" style="color:var(--muted);font-family:var(--mono);font-size:13px;margin-top:6px">prompts/list · prompts/get</p></div>
+    </div>
+    <div class="callout" style="margin-top:20px">All three are capabilities <b>one MCP server</b> can expose — the split is <b>who triggers each</b>. A filesystem server might expose your files as <b>resources</b> (the app reads them), <code>write_file</code> as a <b>tool</b> (the model calls it), and <code>/summarize</code> as a <b>prompt</b> (the user fires it).</div>
+    <div class="footer"><span>MCP 101 · Primitives</span><span></span></div>
+  </section>
+
+  <!-- 7 ARCHITECTURE -->
+  <section class="slide">
+    <p class="kicker">The solution · architecture</p>
+    <h2>Host, client, server — and where the LLM lives</h2>
+    <div class="fill">
+      <svg viewBox="0 0 980 400" role="img" aria-label="Host holds the LLM and one client per server; servers hold tools and never see the model">
+        <rect x="20" y="40" width="430" height="330" rx="14" fill="#f7f8ff" stroke="#4f46e5" stroke-width="1.6"/>
+        <text x="44" y="70" font-size="16" font-weight="800" fill="#4f46e5">HOST</text>
+        <text x="44" y="90" font-size="13" fill="#5a6776">the app — Claude Code, coda-lite… holds trust</text>
+        <rect x="60" y="110" width="350" height="64" rx="11" fill="#fff" stroke="#dde3ea"/>
+        <text x="235" y="140" font-size="16" font-weight="700" text-anchor="middle" fill="#1b2733">🧠 the LLM lives HERE</text>
+        <text x="235" y="160" font-size="13" text-anchor="middle" fill="#5a6776">decides which tools to call</text>
+        <text x="44" y="208" font-size="13" fill="#5a6776">one CLIENT per server (the MCP socket):</text>
+        <rect x="60" y="222" width="160" height="58" rx="10" fill="#fff" stroke="#dde3ea"/>
+        <text x="140" y="248" font-size="15" font-weight="700" text-anchor="middle" fill="#1b2733">Client A</text>
+        <text x="140" y="267" font-size="12" text-anchor="middle" fill="#5a6776">speaks MCP</text>
+        <rect x="250" y="222" width="160" height="58" rx="10" fill="#fff" stroke="#dde3ea"/>
+        <text x="330" y="248" font-size="15" font-weight="700" text-anchor="middle" fill="#1b2733">Client B</text>
+        <text x="330" y="267" font-size="12" text-anchor="middle" fill="#5a6776">speaks MCP</text>
+        <line x1="235" y1="174" x2="235" y2="218" stroke="#b9c1cc" stroke-width="1.3"/>
+
+        <line x1="490" y1="30" x2="490" y2="380" stroke="#dde3ea" stroke-dasharray="6 5"/>
+        <text x="498" y="24" font-size="12" fill="#5a6776">trust boundary</text>
+
+        <text x="640" y="70" font-size="16" font-weight="800" fill="#1b2733">SERVERS</text>
+        <text x="540" y="90" font-size="13" fill="#5a6776">your code: tools + data. Never sees the model.</text>
+        <rect x="560" y="150" width="380" height="60" rx="11" fill="#f3f5f8" stroke="#dde3ea"/>
+        <text x="750" y="176" font-size="15" font-weight="700" text-anchor="middle" fill="#1b2733">Server B — focus</text>
+        <text x="750" y="195" font-size="12" text-anchor="middle" fill="#5a6776">kanban ops</text>
+        <rect x="560" y="240" width="380" height="60" rx="11" fill="#f3f5f8" stroke="#dde3ea"/>
+        <text x="750" y="266" font-size="15" font-weight="700" text-anchor="middle" fill="#1b2733">Server A — the-stacks</text>
+        <text x="750" y="285" font-size="12" text-anchor="middle" fill="#5a6776">RAG over sqlite-vec</text>
+        <g stroke="#4f46e5" stroke-width="1.2">
+          <line x1="220" y1="250" x2="560" y2="268"/>
+          <line x1="330" y1="222" x2="560" y2="182"/>
+        </g>
+        <text x="490" y="330" font-size="13" text-anchor="middle" fill="#5a6776">flow: model → (host relays) → client → server → back</text>
+      </svg>
+    </div>
+    <div class="footer"><span>MCP 101 · Architecture</span><span></span></div>
+  </section>
+
+  <!-- 8 WHY THE SPLIT -->
+  <section class="slide">
+    <p class="kicker">Reading the architecture</p>
+    <h2>The server is "dumb" on purpose — that's the point</h2>
+    <div class="two fill">
+      <div>
+        <ul>
+          <li><b>Host</b> owns the brain (the LLM) and the trust/permission decisions.</li>
+          <li><b>Client</b> = a per-server socket inside the host; one client per connected server.</li>
+          <li><b>Server</b> holds tools + data and <b>never talks to the model</b> — it just answers MCP requests.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="callout"><b>Why "dumb" is good:</b> your server has no idea a model exists, so it's portable across <i>any</i> host — and the host stays the single place that polices what reaches the model.</div>
+        <p class="small muted" style="margin-top:16px">We pick this thread back up in 102, where that boundary becomes a security story.</p>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 101 · The split</span><span></span></div>
+  </section>
+
+  <!-- 9 TRANSPORTS -->
+  <section class="slide">
+    <p class="kicker">Transport</p>
+    <h2>Two transports — the same protocol rides on top</h2>
+    <div class="two fill">
+      <div class="pcard"><div class="who">Local</div><h3><code>stdio</code></h3><p class="small">Host launches the server as a subprocess; they talk over stdin/stdout. Your <code>focus</code> and <code>the-stacks</code>.</p></div>
+      <div class="pcard"><div class="who">Remote / multi-user</div><h3>streamable HTTP</h3><p class="small">Server runs elsewhere; POST + SSE stream. Hosted connectors.</p></div>
+    </div>
+    <div class="callout" style="margin-top:22px">Both carry <b>JSON-RPC 2.0</b> messages. The transport is just the pipe; the protocol is the language. <span class="muted">(The wire format is its own deeper sub-topic.)</span></div>
+    <div class="footer"><span>MCP 101 · Transports</span><span></span></div>
+  </section>
+
+  <!-- 10 LIFECYCLE -->
+  <section class="slide">
+    <p class="kicker">Connection lifecycle</p>
+    <h2>Initialize → negotiate → operate → shut down</h2>
+    <div class="fill">
+      <svg viewBox="0 0 980 360" role="img" aria-label="Lifecycle: initialize and capability negotiation, then operate loop of list and call, then shutdown">
+        <text x="180" y="28" font-size="15" font-weight="700" text-anchor="middle" fill="#5a6776">CLIENT (in host)</text>
+        <text x="800" y="28" font-size="15" font-weight="700" text-anchor="middle" fill="#5a6776">SERVER</text>
+        <line x1="180" y1="40" x2="180" y2="340" stroke="#dde3ea"/>
+        <line x1="800" y1="40" x2="800" y2="340" stroke="#dde3ea"/>
+        <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9aa4b1"/></marker></defs>
+
+        <text x="490" y="62" font-size="13" font-weight="800" text-anchor="middle" fill="#4f46e5">— INITIALIZE —</text>
+        <line x1="180" y1="80" x2="800" y2="80" stroke="#4f46e5" stroke-width="1.4" marker-end="url(#a1)"/>
+        <text x="490" y="74" font-size="13" text-anchor="middle" fill="#1b2733">initialize (my version + capabilities)</text>
+        <line x1="800" y1="112" x2="180" y2="112" stroke="#9aa4b1" stroke-width="1.4" marker-end="url(#a1)"/>
+        <text x="490" y="106" font-size="13" text-anchor="middle" fill="#1b2733">my version + what I expose</text>
+        <line x1="180" y1="144" x2="800" y2="144" stroke="#4f46e5" stroke-width="1.4" marker-end="url(#a1)"/>
+        <text x="490" y="138" font-size="13" text-anchor="middle" fill="#1b2733">initialized ✓</text>
+
+        <text x="490" y="184" font-size="13" font-weight="800" text-anchor="middle" fill="#0e9488">— OPERATE (repeats) —</text>
+        <line x1="180" y1="202" x2="800" y2="202" stroke="#4f46e5" stroke-width="1.4" marker-end="url(#a1)"/>
+        <text x="490" y="196" font-size="13" text-anchor="middle" fill="#1b2733">tools/list · resources/list</text>
+        <line x1="800" y1="234" x2="180" y2="234" stroke="#9aa4b1" stroke-width="1.4" marker-end="url(#a1)"/>
+        <text x="490" y="228" font-size="13" text-anchor="middle" fill="#1b2733">[ catalog of tools w/ schemas ]</text>
+        <line x1="180" y1="266" x2="800" y2="266" stroke="#4f46e5" stroke-width="1.4" marker-end="url(#a1)"/>
+        <text x="490" y="260" font-size="13" text-anchor="middle" fill="#1b2733">tools/call (model picked one)</text>
+        <line x1="800" y1="298" x2="180" y2="298" stroke="#9aa4b1" stroke-width="1.4" marker-end="url(#a1)"/>
+        <text x="490" y="292" font-size="13" text-anchor="middle" fill="#1b2733">result →</text>
+
+        <text x="490" y="332" font-size="13" font-weight="800" text-anchor="middle" fill="#5a6776">— SHUTDOWN —</text>
+      </svg>
+    </div>
+    <div class="footer"><span>MCP 101 · Lifecycle</span><span></span></div>
+  </section>
+
+  <!-- 11 CAPABILITY NEGOTIATION -->
+  <section class="slide">
+    <p class="kicker">The design decision that matters most</p>
+    <h2>Capability negotiation buys you survival</h2>
+    <div class="two fill">
+      <div>
+        <p>At <code>initialize</code>, both sides declare versions and which features they support. Features like resources, prompts, sampling are <b>optional</b> — used only if both negotiated them.</p>
+        <ul>
+          <li>A new client can talk to an old server, and vice versa.</li>
+          <li>Both sides <b>degrade gracefully</b> instead of crashing on an unknown method.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="callout"><b>The real win:</b> client teams and server teams upgrade on <i>totally independent schedules</i>. No "flag day" where everyone must upgrade at once.</div>
+        <p class="small" style="margin-top:16px">For an ecosystem of thousands of independently-owned servers, that's the difference between living and dying. Same trick browsers use to evolve HTTP.</p>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 101 · Capability negotiation</span><span></span></div>
+  </section>
+
+  <!-- 12 MENTAL MODEL -->
+  <section class="slide center">
+    <p class="kicker">One-slide mental model</p>
+    <h2 style="max-width:24ch">MCP is a self-describing, negotiated contract between a model-driven host and dumb, portable servers</h2>
+    <p class="lead" style="margin-top:6px">Tools describe themselves so the <span class="accent">model</span> can choose them at runtime; the <span class="accent">host</span> holds the brain and the trust; <span class="accent2">servers</span> stay ignorant of the model so they plug in anywhere.</p>
+    <div class="footer"><span>MCP 101 · Mental model</span><span></span></div>
+  </section>
+
+  <!-- 13 TAKEAWAYS -->
+  <section class="slide">
+    <p class="kicker">Key takeaways</p>
+    <h2>What to walk away with</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Why it exists:</b> portability — implement once, plug in anywhere. O(n²) → O(n).</li>
+        <li><b>Why now:</b> the consumer became the autonomous model, so tools must self-describe for runtime discovery.</li>
+        <li><b>Three primitives</b> sorted by who pulls the trigger: tools (model), resources (app), prompts (user).</li>
+        <li><b>Architecture:</b> host owns the LLM + trust; one client per server; servers are dumb &amp; portable.</li>
+        <li><b>Lifecycle:</b> capability negotiation lets a decentralized ecosystem evolve without a flag day.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>MCP 101 · Takeaways</span><span></span></div>
+  </section>
+
+  <!-- 14 NEXT -->
+  <section class="slide center">
+    <p class="kicker">Up next</p>
+    <h1>MCP 102</h1>
+    <p class="lead">Context cost, failure modes, and what happens when you wire 16 of these together: token bloat, choice overload, gateways, prompt injection, the confused-deputy problem, and defense by design.</p>
+    <div class="footer"><span>MCP 101 · fin</span><span></span></div>
+  </section>
+
+  <div class="bar" id="bar"></div>
+</div>
+
+<div class="nav">
+  <button onclick="go(-1)">‹ Prev</button>
+  <button onclick="go(1)">Next ›</button>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  const bar=document.getElementById('bar');
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+  }
+  function go(d){show(i+d)}
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){show(0)} else if(e.key==='End'){show(slides.length-1)}
+  });
+  show(0);
+</script>
+</body>
+</html>

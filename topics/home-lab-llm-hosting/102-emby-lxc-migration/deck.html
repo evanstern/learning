@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NNN · Lesson Title</title>
+<!--
+  DECK TEMPLATE — STEP 0: THIS FILE IS YOUR STARTING POINT.
+  Copy it into the lesson folder as deck.html and replace the slides. Do NOT hand-roll a deck,
+  and do NOT start from another lesson's deck.html (those are style references only). Starting
+  anywhere else silently drifts the house style. Decks are built AFTER the build so they can
+  fold in POST_BUILD findings.
+
+  READABILITY IS THE PRIORITY (house rule). Type and diagrams are deliberately LARGE and the
+  slide padding is tight. Optimize for someone reading from across a room or skimming a PDF —
+  never for fitting more onto one slide.
+   - ONE idea per slide. If a slide feels crammed, SPLIT it. More slides is the correct fix,
+     never smaller type. A 20-slide deck that is effortless to read beats a 6-slide deck you
+     have to squint at.
+   - Max 2-3 sentences per text block. Writing a 4th sentence is the signal to stop and convert
+     it into a visual instead (list, diagram, chart, code↔English block).
+   - Never shrink the base font sizes below to win space. Cut words or add a slide instead.
+   - Let diagrams breathe: an SVG/figure should fill the slide width (and most of its height)
+     — put it on its own slide if it's the point.
+
+  House style (see CLAUDE.md → "Deck & guide conventions"):
+   - Single self-contained file. No CDN. Works offline; ⌘P → "Save as PDF" for a handout.
+   - 16:9 slides that MUST fit — verify nothing clips (split before you shrink). One idea per slide.
+   - Arrow keys / space to advance; progress bar + slide numbers are automatic.
+   - Gloss jargon with data-tip (see the sample slide) — a visible ? badge marks the target. Be
+     aggressive: if there's a real chance the learner doesn't know a term, tooltip it. Phrase the
+     definition so the learner could use the term when instructing an AI coding tool (e.g. "a
+     flag is an option you add to a command — you'd tell an AI 'add a flag for verbose output'").
+   - Explaining what a real snippet does? Use the sample CODE ↔ ENGLISH slide instead of a
+     paragraph about the code. The snippet must be copy-pasted verbatim from the actual
+     build — never simplified or trimmed; pick a naturally short (5-10 line) real snippet
+     instead of paraphrasing a longer one.
+   - Has quantitative content (before/after, growth, comparisons)? Use the sample CHART slide
+     below instead of forcing it into a bullet list.
+   - NEVER put <b>/<i> inside an SVG <text>; use <tspan>. var(--…) does NOT resolve in SVG attrs — use literal values there.
+
+  CRAFT REMINDERS (the failure modes an LLM defaults to — watch for these):
+   - Don't repeat the same slide template back-to-back. Vary bullets / diagram / chart / callout
+     so consecutive slides don't read as template-stamped.
+   - Don't recycle the same metaphor across slides — especially not "restaurant"/"kitchen", the
+     #1 crutch. Each concept earns its own metaphor that fits it specifically.
+   - Don't add a decorative accent-color rule/underline beneath a heading just to fill space —
+     a well-known AI-deck tell. Let whitespace do that work instead.
+   - A figure alone isn't a slide — every diagram/chart needs a kicker or caption stating the
+     one takeaway it proves.
+   - Before marking the lesson `decked`, re-check: nothing clips at 16:9, no slide is mostly
+     blank, and jargon is glossed via data-tip. See educate:lesson's "Deck verification" step.
+-->
+<style>
+  :root{
+    --ink:#1b2733; --muted:#5a6776; --accent:#4f46e5; --accent2:#0e9488;
+    --line:#dde3ea; --chip:#f3f5f8; --card:#ffffff; --stage:#e7ebf1; --warn:#b4530a;
+    --codebg:#1e2636; --codefg:#cdd6f4;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--stage);font-family:var(--sans);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .deck{width:min(97vw,1320px);aspect-ratio:16/9;position:relative}
+  .slide{position:absolute;inset:0;background:var(--card);border-radius:18px;
+    box-shadow:0 18px 50px rgba(20,30,50,.16);padding:40px 52px 56px;display:none;
+    flex-direction:column;overflow:hidden}
+  .slide.active{display:flex}
+  .kicker{font-size:17px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 14px}
+  h1{font-size:66px;line-height:1.05;margin:0 0 20px;letter-spacing:-.02em}
+  h2{font-size:48px;line-height:1.12;margin:0 0 22px;letter-spacing:-.01em}
+  p,li{font-size:30px;line-height:1.45;color:var(--ink)}
+  .muted{color:var(--muted)}
+  ul{margin:8px 0 0;padding-left:28px}
+  li{margin:20px 0}
+  .lead{font-size:36px;line-height:1.4;color:var(--muted);max-width:34ch}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:start}
+  .fill{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+  .center{align-items:center;text-align:center;justify-content:center}
+  .chip{display:inline-block;background:var(--chip);border:1px solid var(--line);
+    border-radius:999px;padding:7px 18px;font-size:20px;font-weight:600;margin:5px 7px 5px 0}
+  code,.mono{font-family:var(--mono);background:var(--chip);border:1px solid var(--line);
+    border-radius:6px;padding:2px 9px;font-size:.92em}
+  .callout{border-left:5px solid var(--accent);background:#f5f5ff;border-radius:0 12px 12px 0;
+    padding:20px 26px;font-size:28px;margin-top:14px}
+  .warn{border-left-color:var(--warn);background:#fff6ee}
+  .ok{border-left-color:var(--accent2);background:#eefaf7}
+  .accent{color:var(--accent)} .accent2{color:var(--accent2)} .warnc{color:var(--warn)}
+  /* Diagrams fill the slide — give them the room. Put a big figure on its own slide. */
+  svg{width:100%;height:auto;display:block}
+  .figure{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+  .figure svg{max-height:100%}
+  /* Code <-> English: real snippet left, plain-English translation right. Snippet text must
+     be copy-pasted verbatim from the actual build — never simplified. pre wraps (no horizontal
+     scroll); this is a teaching tool, not an IDE. */
+  .translation{flex:1;display:grid;grid-template-columns:1fr 1fr;border-radius:14px;
+    overflow:hidden;box-shadow:0 10px 30px rgba(20,30,50,.14);min-height:0}
+  .t-label{font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    opacity:.6;margin:0 0 12px}
+  .t-code{background:var(--codebg);color:var(--codefg);padding:26px 30px;overflow:auto}
+  .t-code pre{margin:0;font-family:var(--mono);font-size:22px;line-height:1.6;
+    white-space:pre-wrap;word-break:break-word;color:var(--codefg)}
+  .t-english{background:var(--chip);padding:26px 30px;border-left:4px solid var(--accent);
+    overflow:auto}
+  .t-english p{font-size:22px;line-height:1.55;margin:0 0 14px}
+  .t-english p:last-child{margin-bottom:0}
+  .footer{position:absolute;left:52px;right:52px;bottom:16px;display:flex;
+    justify-content:space-between;align-items:center;font-size:16px;color:var(--muted)}
+  .footer .pageno{font-variant-numeric:tabular-nums}
+  .bar{position:absolute;left:0;bottom:0;height:5px;background:var(--accent);
+    border-radius:0 0 0 18px;transition:width .25s ease}
+  .nav{position:fixed;bottom:14px;right:18px;display:flex;gap:8px;z-index:10}
+  .nav button{font-family:var(--sans);font-size:17px;border:1px solid var(--line);
+    background:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;color:var(--ink)}
+  .nav button:hover{background:var(--chip)}
+  .title-wrap{display:flex;flex-direction:column;justify-content:center;height:100%}
+  .small{font-size:24px}
+  /* Lightweight hover tooltip — any element (HTML or SVG) with a data-tip attribute. */
+  [data-tip]{cursor:help}
+  .tip-pop{position:fixed;z-index:50;max-width:420px;background:var(--ink);color:#fff;
+    font-size:19px;line-height:1.4;padding:13px 17px;border-radius:10px;pointer-events:none;
+    box-shadow:0 8px 24px rgba(20,30,50,.28);opacity:0;transform:translateY(4px);
+    transition:opacity .12s ease,transform .12s ease}
+  .tip-pop.show{opacity:1;transform:translateY(0)}
+  @media print{
+    body{display:block;background:#fff;overflow:visible}
+    .deck{width:100%;aspect-ratio:auto}
+    .slide{display:flex;position:relative;page-break-after:always;box-shadow:none;
+      border:1px solid var(--line);margin-bottom:18px;height:96vh}
+    .nav{display:none}
+    .tip-pop{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide active">
+    <div class="title-wrap">
+      <p class="kicker">Course · Lesson NNN</p>
+      <h1>Lesson Title<br>Subtitle</h1>
+      <p class="lead">One-sentence framing of what this lesson is about.</p>
+      <p class="muted small" style="margin-top:30px">context · audience · scan solo or follow along live</p>
+    </div>
+    <div class="footer"><span>Topic NNN</span><span>↦ arrow keys / space to advance</span></div>
+  </section>
+
+  <!-- 2 CONTENT (example: bullets) -->
+  <section class="slide">
+    <p class="kicker">Section kicker</p>
+    <h2>A claim worth a slide</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Point one</b><br><span class="muted small">— a why-line so the bullet teaches, not just labels.</span></li>
+        <li><b>Point two</b><br><span class="muted small">— keep each slide to one idea; split if it feels crammed.</span></li>
+      </ul>
+    </div>
+    <div class="footer"><span>Topic · section</span><span></span></div>
+  </section>
+
+  <!-- 3 CODE <-> ENGLISH (example: real snippet left, plain-English translation right. The
+       snippet must be copy-pasted verbatim from the actual build — never simplified or
+       trimmed. Pick a naturally short (5-10 line) real snippet instead of paraphrasing a
+       longer one. Each English line should map to 1-2 code lines and explain the WHY, not
+       just restate the syntax. ) -->
+  <section class="slide">
+    <p class="kicker">What the code actually does</p>
+    <h2>Real snippet, plain English</h2>
+    <div class="translation">
+      <div class="t-code">
+        <p class="t-label">code</p>
+        <pre>function debounce(fn, wait) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), wait);
+  };
+}</pre>
+      </div>
+      <div class="t-english">
+        <p class="t-label">plain english</p>
+        <p>Wrap a function so it waits for a pause in calls before it actually runs.</p>
+        <p>Every new call cancels whatever run was already scheduled.</p>
+        <p>...then books a fresh one <code>wait</code> ms in the future.</p>
+        <p>Rapid-fire calls collapse into a single run — the last one.</p>
+      </div>
+    </div>
+    <div class="footer"><span>Topic · code↔english</span><span></span></div>
+  </section>
+
+  <!-- 4 DIAGRAM (give the figure the whole slide; this is where big diagrams live) -->
+  <section class="slide">
+    <p class="kicker">Show, don't tell</p>
+    <h2>Put the diagram on its own slide</h2>
+    <div class="figure">
+      <svg viewBox="0 0 800 300" role="img" aria-label="example diagram">
+        <rect x="40" y="110" width="200" height="80" rx="12" fill="#eef0ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="140" y="158" text-anchor="middle" font-size="26" fill="#1b2733" font-family="sans-serif">Input</text>
+        <line x1="240" y1="150" x2="320" y2="150" stroke="#5a6776" stroke-width="3" marker-end="url(#a)"/>
+        <rect x="320" y="110" width="200" height="80" rx="12" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="420" y="158" text-anchor="middle" font-size="26" fill="#1b2733" font-family="sans-serif">Process</text>
+        <line x1="520" y1="150" x2="600" y2="150" stroke="#5a6776" stroke-width="3" marker-end="url(#a)"/>
+        <rect x="600" y="110" width="160" height="80" rx="12" fill="#f5f5ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="680" y="158" text-anchor="middle" font-size="26" fill="#1b2733" font-family="sans-serif">Output</text>
+        <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="#5a6776"/></marker></defs>
+      </svg>
+    </div>
+    <div class="footer"><span>Topic · diagram</span><span></span></div>
+  </section>
+
+  <!-- 5 CHART (example: quantitative content — before/after, growth, comparisons.
+       Use this instead of forcing numbers into a bullet list. Data labels sit directly on
+       the marks so the reader doesn't have to cross-reference a legend. Literal hex values
+       only inside the SVG — var(--…) does not resolve in SVG attrs. ) -->
+  <section class="slide">
+    <p class="kicker">Show the numbers</p>
+    <h2>One-line takeaway the chart proves</h2>
+    <div class="figure">
+      <svg viewBox="0 0 640 320" role="img" aria-label="example bar chart comparing three quarters">
+        <line x1="60" y1="40" x2="60" y2="260" stroke="#dde3ea" stroke-width="2"/>
+        <line x1="60" y1="260" x2="600" y2="260" stroke="#dde3ea" stroke-width="2"/>
+        <line x1="60" y1="180" x2="600" y2="180" stroke="#dde3ea" stroke-width="1.5"/>
+        <line x1="60" y1="100" x2="600" y2="100" stroke="#dde3ea" stroke-width="1.5"/>
+        <rect x="110" y="190" width="90" height="70" fill="#4f46e5"/>
+        <rect x="260" y="150" width="90" height="110" fill="#4f46e5"/>
+        <rect x="410" y="90" width="90" height="170" fill="#0e9488"/>
+        <text x="155" y="180" text-anchor="middle" font-size="22" font-weight="700" fill="#1b2733">32</text>
+        <text x="305" y="140" text-anchor="middle" font-size="22" font-weight="700" fill="#1b2733">48</text>
+        <text x="455" y="80" text-anchor="middle" font-size="22" font-weight="700" fill="#1b2733">71</text>
+        <text x="155" y="285" text-anchor="middle" font-size="19" fill="#5a6776">Q1</text>
+        <text x="305" y="285" text-anchor="middle" font-size="19" fill="#5a6776">Q2</text>
+        <text x="455" y="285" text-anchor="middle" font-size="19" fill="#5a6776">Q3</text>
+      </svg>
+    </div>
+    <div class="footer"><span>Topic · chart</span><span></span></div>
+  </section>
+
+  <!-- 6 JARGON TOOLTIP (example: ? badge + data-tip; works on HTML or SVG. Be aggressive about
+       tooltipping — if there's a real chance the learner doesn't know a term, tooltip it. Phrase
+       the definition so the learner could use the term when instructing an AI coding tool. ) -->
+  <section class="slide">
+    <p class="kicker">Glossing a term</p>
+    <h2>Hover the <span data-tip="Put the full definition here, phrased so the reader could use the term when instructing an AI coding tool. The popover follows the cursor, stays in-bounds, works on SVG too, and is hidden when printing.">term&#160;<span style="display:inline-block;background:var(--accent2);color:#fff;border-radius:50%;width:30px;height:30px;line-height:30px;text-align:center;font-size:19px;font-weight:700">?</span></span> for a definition</h2>
+    <div class="fill">
+      <p class="lead">Any element with a <code>data-tip</code> attribute gets a styled tooltip. Mark the target with a visible <b>?</b> badge so the reader knows where to hover.</p>
+    </div>
+    <div class="footer"><span>Topic · glossary-on-hover</span><span></span></div>
+  </section>
+
+  <!-- 7 TAKEAWAYS -->
+  <section class="slide">
+    <p class="kicker">Key takeaways</p>
+    <h2>What to walk away with</h2>
+    <div class="fill">
+      <ul>
+        <li>Takeaway one.</li>
+        <li>Takeaway two.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Topic · takeaways</span><span></span></div>
+  </section>
+
+  <!-- 8 NEXT -->
+  <section class="slide center">
+    <p class="kicker">Up next</p>
+    <h1>Lesson NNN+1</h1>
+    <p class="lead">One-line teaser for the next lesson.</p>
+    <div class="footer"><span>Topic · fin</span><span></span></div>
+  </section>
+
+  <div class="bar" id="bar"></div>
+</div>
+
+<div class="nav">
+  <button onclick="go(-1)">‹ Prev</button>
+  <button onclick="go(1)">Next ›</button>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  const bar=document.getElementById('bar');
+  // Slide numbers: write "n / total" into each slide's footer right span (skip the title).
+  slides.forEach((s,k)=>{
+    const right=s.querySelector('.footer span:last-child');
+    if(right && k>0){ right.classList.add('pageno'); right.textContent=(k+1)+' / '+slides.length; }
+  });
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+  }
+  function go(d){show(i+d)}
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){show(0)} else if(e.key==='End'){show(slides.length-1)}
+  });
+  show(0);
+
+  // Lightweight tooltip: styled popover for any [data-tip] element (works on SVG too).
+  (function(){
+    const pop=document.createElement('div'); pop.className='tip-pop'; document.body.appendChild(pop);
+    const place=e=>{ const pad=14, r=pop.getBoundingClientRect();
+      let x=e.clientX+pad, y=e.clientY+pad;
+      if(x+r.width>innerWidth-8) x=e.clientX-r.width-pad;
+      if(y+r.height>innerHeight-8) y=e.clientY-r.height-pad;
+      pop.style.left=x+'px'; pop.style.top=y+'px'; };
+    document.addEventListener('mouseover',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]');
+      if(!t) return; pop.textContent=t.getAttribute('data-tip'); pop.classList.add('show'); place(e); });
+    document.addEventListener('mousemove',e=>{ if(pop.classList.contains('show')) place(e); });
+    document.addEventListener('mouseout',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]');
+      if(t && !t.contains(e.relatedTarget)) pop.classList.remove('show'); });
+  })();
+</script>
+</body>
+</html>

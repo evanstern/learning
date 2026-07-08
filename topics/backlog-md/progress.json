@@ -1,0 +1,61 @@
+{
+  "topic": "backlog-md",
+  "title": "Backlog.md — Effective Use & SpecKit Integration",
+  "updated": "2026-07-02",
+  "mode": "discussion / conceptual (no delegated build)",
+  "lifecycle": [
+    "scaffolded",
+    "taught",
+    "spec'd",
+    "built",
+    "decked",
+    "done"
+  ],
+  "lifecycleNotes": {
+    "scaffolded": "folder copied from .template/",
+    "taught": "Socratic session complete; every checklist item demonstrated",
+    "spec'd": "HANDOFF.md written (delegated builds only) — not required for this lesson",
+    "built": "not applicable — no delegated build for this lesson",
+    "decked": "deck.html + guide.md produced",
+    "done": "all required artifacts exist and verified on disk"
+  },
+  "definitionOfDone": {
+    "always": [
+      "checklist",
+      "rawNotes"
+    ],
+    "decksStandardForEveryLesson": [
+      "deck",
+      "guide"
+    ],
+    "gates": [
+      "a lesson may not be marked done without its required artifacts on disk"
+    ]
+  },
+  "cursor": {
+    "current": "101-overview",
+    "currentStatus": "scaffolded",
+    "nextAction": "Run the Socratic teaching session against checklist.md, logging one raw-notes.md entry per exchange."
+  },
+  "lessons": [
+    {
+      "id": "101-overview",
+      "n": 101,
+      "title": "Backlog.md — Effective Use & SpecKit Integration",
+      "status": "scaffolded",
+      "artifacts": {
+        "checklist": true,
+        "rawNotes": true,
+        "handoff": false,
+        "postBuild": false,
+        "deck": true,
+        "guide": false
+      },
+      "motivator": "User wants a working overview of Backlog.md and wants to explore whether SpecKit's spec-driven approach (spec.md/plan.md/tasks.md, constitution.md) could be layered onto Backlog.md's own docs/decisions scaffolding.",
+      "openThreads": [
+        "Backlog.md already has docs/ and decisions/ folders — how much of SpecKit's spec->plan->tasks pipeline is redundant vs. additive?"
+      ]
+    }
+  ],
+  "parked": []
+}

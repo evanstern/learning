@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP 102 — Context Cost &amp; Failure Modes</title>
+<style>
+  :root{
+    --ink:#1b2733; --muted:#5a6776; --accent:#4f46e5; --accent2:#0e9488;
+    --line:#dde3ea; --chip:#f3f5f8; --card:#ffffff; --stage:#e7ebf1; --warn:#b4530a; --danger:#b42318;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--stage);font-family:var(--sans);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .deck{width:min(96vw,1180px);aspect-ratio:16/9;position:relative}
+  .slide{position:absolute;inset:0;background:var(--card);border-radius:18px;
+    box-shadow:0 18px 50px rgba(20,30,50,.16);padding:50px 58px;display:none;
+    flex-direction:column;overflow:hidden}
+  .slide.active{display:flex}
+  .kicker{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .kicker.d{color:var(--danger)}
+  h1{font-size:46px;line-height:1.08;margin:0 0 18px;letter-spacing:-.02em}
+  h2{font-size:31px;line-height:1.14;margin:0 0 18px;letter-spacing:-.01em}
+  p,li{font-size:19px;line-height:1.48;color:var(--ink)}
+  .muted{color:var(--muted)}
+  ul{margin:6px 0 0;padding-left:22px} li{margin:10px 0}
+  .lead{font-size:22px;color:var(--muted);max-width:64ch}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+  .fill{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .center{align-items:center;text-align:center;justify-content:center}
+  .chip{display:inline-block;background:var(--chip);border:1px solid var(--line);
+    border-radius:999px;padding:5px 14px;font-size:15px;font-weight:600;margin:4px 6px 4px 0}
+  code,.mono{font-family:var(--mono);background:var(--chip);border:1px solid var(--line);
+    border-radius:6px;padding:1px 7px;font-size:.9em}
+  .callout{border-left:4px solid var(--accent);background:#f5f5ff;border-radius:0 10px 10px 0;
+    padding:15px 19px;font-size:18px;margin-top:10px}
+  .callout.warn{border-left-color:var(--warn);background:#fff6ee}
+  .callout.danger{border-left-color:var(--danger);background:#fdf3f2}
+  .callout.ok{border-left-color:var(--accent2);background:#f0faf8}
+  .accent{color:var(--accent)} .accent2{color:var(--accent2)} .warnc{color:var(--warn)} .dangerc{color:var(--danger)}
+  svg{width:100%;height:auto;display:block}
+  .footer{position:absolute;left:58px;right:58px;bottom:16px;display:flex;
+    justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+  .bar{position:absolute;left:0;bottom:0;height:4px;background:var(--accent);
+    border-radius:0 0 0 18px;transition:width .25s ease}
+  .nav{position:fixed;bottom:14px;right:18px;display:flex;gap:8px;z-index:10}
+  .nav button{font-family:var(--sans);font-size:15px;border:1px solid var(--line);
+    background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;color:var(--ink)}
+  .nav button:hover{background:var(--chip)}
+  .title-wrap{display:flex;flex-direction:column;justify-content:center;height:100%}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:6px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:6px}
+  .pcard{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .pcard h3{margin:0 0 6px;font-size:19px}
+  .pcard .who{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em}
+  .small{font-size:16px} .xs{font-size:14px}
+  .fix{font-size:14px;color:var(--accent2);margin-top:11px;border-top:1px dashed var(--line);padding-top:9px}
+  .fix b{color:var(--accent2);text-transform:uppercase;letter-spacing:.06em;font-size:12px}
+  pre.code{font-family:var(--mono);font-size:13px;line-height:1.42;background:#0f1320;color:#e6e9f0;
+    border-radius:11px;padding:13px 15px;margin:0;overflow:auto;white-space:pre}
+  pre.code .c{color:#8a93a8} pre.code .k{color:#a5b4fc} pre.code .s{color:#86efac} pre.code .t{color:#fca5a5;font-weight:700}
+  .rule{background:var(--chip);border:1px solid var(--line);border-radius:9px;padding:9px 13px;font-size:14px;margin:0 0 7px}
+  .rule b{font-family:var(--mono);font-size:12.5px}
+  @media print{
+    body{display:block;background:#fff;overflow:visible}
+    .deck{width:100%;aspect-ratio:auto}
+    .slide{display:flex;position:relative;page-break-after:always;box-shadow:none;
+      border:1px solid var(--line);margin-bottom:18px;height:90vh}
+    .nav{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide active">
+    <div class="title-wrap">
+      <p class="kicker">A practical primer · Part 2 of 2</p>
+      <h1>MCP 102<br>Context Cost &amp; Failure Modes</h1>
+      <p class="lead">101 was <i>why MCP exists</i>. 102 is what breaks when you actually run it at scale — and how to defend by design.</p>
+      <p class="muted small" style="margin-top:24px">Throughline: pressure-test everything against a real mesh of ~16 product verticals.</p>
+    </div>
+    <div class="footer"><span>MCP 102</span><span>↦ arrow keys / space to advance</span></div>
+  </section>
+
+  <!-- 2 RECAP -->
+  <section class="slide">
+    <p class="kicker">Where 102 begins</p>
+    <h2>Recap: the picture from 101</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Portability:</b> a standard protocol collapses M×N integrations into M+N.</li>
+        <li><b>Self-describing tools:</b> the consumer is the model, so tools advertise themselves for runtime discovery.</li>
+        <li><b>Architecture:</b> host owns the LLM + trust; one client per server; servers are dumb &amp; portable.</li>
+      </ul>
+      <div class="callout">That self-describing, connect-everything design is exactly what creates 102's problems. Every nice property has a bill.</div>
+    </div>
+    <div class="footer"><span>MCP 102 · Recap</span><span></span></div>
+  </section>
+
+  <!-- 3 CONTEXT COST -->
+  <section class="slide">
+    <p class="kicker">The hidden tax</p>
+    <h2>Connecting a server isn't free — it spends context</h2>
+    <div class="fill">
+      <p class="lead">At connect time, every server dumps its full tool catalog — names, descriptions, and input <b>schemas</b> — into the model's context window, <i>before a single tool is called</i>.</p>
+      <div class="callout warn">The model has to "hold the menu in its head" to know what it can do. A big menu is a standing cost on every turn.</div>
+    </div>
+    <div class="footer"><span>MCP 102 · Context cost</span><span></span></div>
+  </section>
+
+  <!-- 4 TOKEN BLOAT + CHOICE OVERLOAD -->
+  <section class="slide">
+    <p class="kicker">Two failures fall out of that</p>
+    <h2>Token bloat <span class="muted">and</span> choice overload</h2>
+    <div class="two fill">
+      <div class="pcard"><div class="who">The obvious one</div><h3>Token bloat</h3><p class="small">16 verticals × ~15 tools × a schema each = potentially hundreds of tools, tens of thousands of tokens gone up front. Less room for the task, higher cost, more latency.</p></div>
+      <div class="pcard"><div class="who">The sneaky one</div><h3>Choice overload</h3><p class="small">Even if the window holds it: the model must pick one tool from a giant menu. With 300 near-duplicate options across verticals (four <code>search</code>s, three <code>get_customer</code>s), decision quality collapses — wrong tool, wrong vertical, or freeze.</p></div>
+    </div>
+    <div class="callout danger" style="margin-top:20px">Token bloat is the cost you can see. <b>Selection degradation is the one that quietly wrecks reliability.</b></div>
+    <div class="footer"><span>MCP 102 · Token bloat &amp; choice overload</span><span></span></div>
+  </section>
+
+  <!-- 5 GATEWAY DIAGRAM -->
+  <section class="slide">
+    <p class="kicker">The mitigation</p>
+    <h2>The gateway / "librarian" + tool search</h2>
+    <div class="fill">
+      <svg viewBox="0 0 980 380" role="img" aria-label="A gateway exposes search_tools to the host and routes to 16 vertical servers, returning only relevant tools">
+        <defs>
+          <marker id="g1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9aa4b1"/></marker>
+          <marker id="g2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#4f46e5"/></marker>
+        </defs>
+        <rect x="20" y="120" width="180" height="150" rx="13" fill="#f7f8ff" stroke="#4f46e5" stroke-width="1.6"/>
+        <text x="110" y="150" font-size="15" font-weight="800" text-anchor="middle" fill="#4f46e5">HOST</text>
+        <text x="110" y="172" font-size="13" text-anchor="middle" fill="#5a6776">🧠 LLM</text>
+        <text x="110" y="206" font-size="12" text-anchor="middle" fill="#5a6776">sees ONE connection</text>
+        <text x="110" y="224" font-size="12" text-anchor="middle" fill="#5a6776">+ a tiny surface:</text>
+        <text x="110" y="246" font-size="13" font-weight="700" text-anchor="middle" fill="#1b2733">search_tools()</text>
+
+        <rect x="320" y="110" width="200" height="170" rx="13" fill="#eef0ff" stroke="#4f46e5" stroke-width="1.6"/>
+        <text x="420" y="138" font-size="15" font-weight="800" text-anchor="middle" fill="#4f46e5">GATEWAY</text>
+        <text x="420" y="158" font-size="12" text-anchor="middle" fill="#5a6776">"the librarian"</text>
+        <text x="420" y="186" font-size="12" text-anchor="middle" fill="#1b2733">1. semantic search catalogs</text>
+        <text x="420" y="208" font-size="12" text-anchor="middle" fill="#1b2733">2. return 2–3 tools</text>
+        <text x="420" y="230" font-size="12" text-anchor="middle" fill="#1b2733">3. proxy the call</text>
+        <text x="420" y="262" font-size="12" text-anchor="middle" fill="#5a6776">(you own this layer)</text>
+
+        <line x1="200" y1="178" x2="318" y2="178" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#g2)"/>
+        <text x="259" y="170" font-size="11" text-anchor="middle" fill="#4f46e5">"refund a customer"</text>
+        <line x1="318" y1="210" x2="202" y2="210" stroke="#9aa4b1" stroke-width="1.5" marker-end="url(#g1)"/>
+        <text x="259" y="226" font-size="11" text-anchor="middle" fill="#5a6776">↩ 2–3 tools</text>
+
+        <text x="800" y="40" font-size="14" font-weight="800" text-anchor="middle" fill="#1b2733">16 vertical MCP servers</text>
+        <g font-size="12" text-anchor="middle">
+          <rect x="700" y="56" width="200" height="28" rx="6" fill="#f3f5f8" stroke="#dde3ea"/><text x="800" y="75" fill="#1b2733">Billing · 15 tools</text>
+          <rect x="700" y="92" width="200" height="28" rx="6" fill="#f3f5f8" stroke="#dde3ea"/><text x="800" y="111" fill="#1b2733">CRM · 20 tools</text>
+          <rect x="700" y="128" width="200" height="28" rx="6" fill="#f3f5f8" stroke="#dde3ea"/><text x="800" y="147" fill="#1b2733">Inventory · 12</text>
+          <rect x="700" y="164" width="200" height="28" rx="6" fill="#f3f5f8" stroke="#dde3ea"/><text x="800" y="183" fill="#1b2733">Shipping · 9</text>
+          <rect x="700" y="200" width="200" height="28" rx="6" fill="#f3f5f8" stroke="#dde3ea"/><text x="800" y="219" fill="#1b2733">Support · 18</text>
+          <rect x="700" y="236" width="200" height="28" rx="6" fill="#f3f5f8" stroke="#dde3ea"/><text x="800" y="255" fill="#5a6776">… 11 more</text>
+        </g>
+        <text x="800" y="288" font-size="12" text-anchor="middle" fill="#5a6776">~300 tools total — NONE loaded into context up front</text>
+        <g stroke="#9aa4b1" stroke-width="1">
+          <line x1="520" y1="175" x2="700" y2="70"/><line x1="520" y1="185" x2="700" y2="106"/>
+          <line x1="520" y1="195" x2="700" y2="142"/><line x1="520" y1="205" x2="700" y2="178"/>
+          <line x1="520" y1="215" x2="700" y2="214"/><line x1="520" y1="225" x2="700" y2="250"/>
+        </g>
+      </svg>
+      <div class="callout ok">Model asks for what it needs → gateway searches all catalogs (tool RAG) → returns just the few relevant tools. Small context, sharp choices. <span class="muted">(This very session uses deferred tools + a ToolSearch step.)</span></div>
+    </div>
+    <div class="footer"><span>MCP 102 · Gateway</span><span></span></div>
+  </section>
+
+  <!-- 6 GATEWAY COSTS -->
+  <section class="slide">
+    <p class="kicker">Every fix buys a new failure surface</p>
+    <h2>What the gateway costs you</h2>
+    <div class="grid3 fill">
+      <div class="pcard"><div class="who">Org</div><h3>Ownership burden</h3><p class="small">Someone must build &amp; maintain it, and keep it aware of every vertical's catalog. A Conway's-Law problem as much as a technical one.</p>
+        <p class="fix"><b>Addressed by →</b> run it as a platform product: each vertical team owns its server behind a published contract; a platform/CoE team owns the gateway + registry that auto-discovers catalogs.</p></div>
+      <div class="pcard"><div class="who">Availability</div><h3>Single point of failure</h3><p class="small">Gateway down = all 16 verticals unreachable at once. Plus an extra hop: latency and a throughput chokepoint in the hot path.</p>
+        <p class="fix"><b>Addressed by →</b> standard distributed-systems hygiene: replicate/load-balance, health checks, timeouts &amp; circuit breakers, cache catalogs, and degrade gracefully (cached or direct connections).</p></div>
+      <div class="pcard"><div class="who">Correctness</div><h3>Silent mis-routing</h3><p class="small">If search returns the wrong tools — or misses the right one — the model can't recover, because it never learns the correct tool existed. A visible failure becomes a silent one.</p>
+        <p class="fix"><b>Addressed by →</b> treat the router like a model: eval sets &amp; offline benchmarks, full logging/observability, generous top-k, and a confidence fallback to a broader listing.</p></div>
+    </div>
+    <div class="callout" style="margin-top:18px">None of these are unique to MCP — they're known <b>distributed-systems</b> and <b>MLOps</b> playbooks. We flag the solution shape here and save the deep dives for their own sessions.</div>
+    <div class="footer"><span>MCP 102 · Gateway costs</span><span></span></div>
+  </section>
+
+  <!-- 7 INJECTION -->
+  <section class="slide">
+    <p class="kicker d">The heavyweight failure mode</p>
+    <h2>Prompt injection via tool <i>output</i></h2>
+    <div class="two fill">
+      <div>
+        <p>Tool results flow back into context. A <code>get_ticket(id)</code> returns text <b>typed by a customer.</b></p>
+        <div class="callout danger" style="margin-top:8px"><span class="mono">"Disregard all previous instructions and …"</span></div>
+        <p class="small" style="margin-top:14px">The model reads its whole context as one stream. It can't cleanly tell <i>data it fetched</i> from <i>instructions to obey.</i></p>
+      </div>
+      <div>
+        <div class="callout"><b>Root cause:</b> data and instructions share one channel. There is no reliable in-band marker that separates "content" from "command."</div>
+        <p class="small muted" style="margin-top:16px">You cannot prompt your way out of this with "ignore malicious instructions" — that's just more in-band text an attacker can talk over.</p>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 102 · Injection</span><span></span></div>
+  </section>
+
+  <!-- 8 MESH AMPLIFIER -->
+  <section class="slide">
+    <p class="kicker d">Why the mesh makes it catastrophic</p>
+    <h2>The confused deputy with the keys to everything</h2>
+    <div class="fill">
+      <p class="lead">An agent's <b>effective privilege = the union of every tool it can reach.</b> Through the gateway, the support-ticket reader can also touch Billing's <code>refund_customer</code> and CRM's <code>export_contacts</code>.</p>
+      <div class="callout danger">Low-trust input (a box <i>any customer</i> can type into) + high-privilege reach = a single poisoned ticket pivoting to <b>effective root across the entire portfolio.</b> The gateway that solved context also concentrated all authority into one compromisable decision-maker.</div>
+    </div>
+    <div class="footer"><span>MCP 102 · Confused deputy</span><span></span></div>
+  </section>
+
+  <!-- 9 RBAC -->
+  <section class="slide">
+    <p class="kicker">A common wrong turn</p>
+    <h2>Why RBAC doesn't touch this</h2>
+    <div class="two fill">
+      <div>
+        <p><b>RBAC governs identity:</b> who are you, what may you do.</p>
+        <p style="margin-top:10px"><b>Injection is a provenance / integrity problem:</b> a fully-authorized agent is tricked by instructions laundered through data.</p>
+      </div>
+      <div>
+        <div class="callout">The agent <i>has every right</i> to call <code>refund_customer</code>. It's just being told to by the wrong author. RBAC answers "<i>may</i> this agent?" — not "<i>who really asked?</i>"</div>
+        <p class="small accent2" style="margin-top:16px"><b>Different axis entirely.</b> That's why authz alone can't save you here.</p>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 102 · RBAC vs provenance</span><span></span></div>
+  </section>
+
+  <!-- 10 DEFENSE PHILOSOPHY -->
+  <section class="slide center">
+    <p class="kicker">The defensive stance</p>
+    <h2 style="max-width:22ch">You can't reliably stop injection at the input</h2>
+    <p class="lead">So stop trying to win that race. Instead, <b class="accent">constrain what a compromised agent can do.</b></p>
+    <p class="big accent2" style="margin-top:18px">Containment &gt; prevention.</p>
+    <div class="footer"><span>MCP 102 · Containment</span><span></span></div>
+  </section>
+
+  <!-- 11 LEVERS 1-2 -->
+  <section class="slide">
+    <p class="kicker">Defense levers · lower privilege</p>
+    <h2>Scope the agent · gate the action</h2>
+    <div class="two fill">
+      <div class="pcard"><div class="who">No god-agent</div><h3>Scoped, task-specific agents</h3><p class="small">The agent that reads tickets simply <b>does not hold</b> <code>refund_customer</code>. Separation of duties. The dangerous union only exists if you build it that way.</p></div>
+      <div class="pcard"><div class="who">Un-injectable</div><h3>Deterministic gates + caps</h3><p class="small">The model can't call <code>refund_customer</code> directly; it proposes, and plain <b>non-LLM code</b> enforces rules: <code>if amount &gt; 50: deny/escalate</code>. You can't prompt-inject an <code>if</code>.</p></div>
+    </div>
+    <div class="footer"><span>MCP 102 · Scope &amp; gate</span><span></span></div>
+  </section>
+
+  <!-- 12 LEVER 3 -->
+  <section class="slide">
+    <p class="kicker">Defense levers · break the autonomy chain</p>
+    <h2>Human-in-the-loop, wired into orchestration</h2>
+    <div class="two fill">
+      <div>
+        <p>The model <i>proposes</i> the privileged action; a human <i>commits</i> it. (Exactly what "allow this tool?" prompts do.) Cheapest, most effective circuit-breaker.</p>
+        <div class="callout">Compose it: the deterministic gate auto-approves the safe, bounded cases and <b>only escalates the ambiguous ones</b> to a human.</div>
+      </div>
+      <div>
+        <div class="pcard"><div class="who">In practice</div><h3>Gates = graph edges</h3><p class="small">In <b>LangGraph</b>, a gate is a <b>conditional edge</b> (plain code) choosing the next node. In <b>n8n</b>, an <b>IF/Switch</b> node. Agents are nodes; the flow between them is code the model can't redraw.</p></div>
+        <p class="xs warnc" style="margin-top:12px"><b>Rule:</b> branch on <i>structured, trusted state</i> (a computed amount), never on the model's free-text say-so — or the injection leaks back in one layer up.</p>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 102 · Human-in-the-loop</span><span></span></div>
+  </section>
+
+  <!-- 13 DUAL-LLM DIAGRAM -->
+  <section class="slide">
+    <p class="kicker">Defense levers · architectural quarantine</p>
+    <h2>The dual-LLM (planner / executor) pattern</h2>
+    <div class="fill">
+      <svg viewBox="0 0 980 360" role="img" aria-label="Privileged planner holds tools and plans from trusted input; quarantined tool-less LLM turns untrusted prose into typed data; deterministic policy engine gates actions">
+        <defs><marker id="d1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9aa4b1"/></marker>
+        <marker id="d2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#4f46e5"/></marker></defs>
+
+        <rect x="20" y="28" width="190" height="40" rx="8" fill="#f3f5f8" stroke="#dde3ea"/>
+        <text x="115" y="46" font-size="12" font-weight="700" text-anchor="middle" fill="#1b2733">Trusted request</text>
+        <text x="115" y="61" font-size="11" text-anchor="middle" fill="#5a6776">"handle ticket 123"</text>
+
+        <rect x="20" y="100" width="270" height="120" rx="12" fill="#f7f8ff" stroke="#4f46e5" stroke-width="1.7"/>
+        <text x="155" y="126" font-size="14" font-weight="800" text-anchor="middle" fill="#4f46e5">PRIVILEGED LLM</text>
+        <text x="155" y="145" font-size="11" text-anchor="middle" fill="#5a6776">the planner — HOLDS tools</text>
+        <text x="155" y="170" font-size="11" text-anchor="middle" fill="#1b2733">writes the PLAN from</text>
+        <text x="155" y="186" font-size="11" text-anchor="middle" fill="#1b2733">trusted input only</text>
+        <text x="155" y="206" font-size="10.5" font-style="italic" text-anchor="middle" fill="#5a6776">never sees untrusted prose</text>
+        <line x1="115" y1="68" x2="130" y2="98" stroke="#4f46e5" stroke-width="1.4" marker-end="url(#d2)"/>
+
+        <rect x="690" y="28" width="270" height="40" rx="8" fill="#fdf3f2" stroke="#d99" stroke-dasharray="3 3"/>
+        <text x="825" y="46" font-size="12" font-weight="700" text-anchor="middle" fill="#b42318">☣ Untrusted content</text>
+        <text x="825" y="61" font-size="11" text-anchor="middle" fill="#5a6776">customer ticket prose</text>
+
+        <rect x="690" y="100" width="270" height="120" rx="12" fill="#fff" stroke="#9aa4b1" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="825" y="126" font-size="14" font-weight="800" text-anchor="middle" fill="#1b2733">QUARANTINED LLM</text>
+        <text x="825" y="145" font-size="11" text-anchor="middle" fill="#5a6776">the parser — NO tools</text>
+        <text x="825" y="170" font-size="11" text-anchor="middle" fill="#1b2733">reads prose → emits</text>
+        <text x="825" y="186" font-size="11" text-anchor="middle" fill="#1b2733">TYPED data to a schema</text>
+        <text x="825" y="206" font-size="10.5" font-style="italic" text-anchor="middle" fill="#5a6776">can't act, can only describe</text>
+        <line x1="825" y1="68" x2="825" y2="98" stroke="#9aa4b1" stroke-width="1.4" marker-end="url(#d1)"/>
+
+        <line x1="290" y1="148" x2="688" y2="148" stroke="#4f46e5" stroke-width="1.4" marker-end="url(#d2)"/>
+        <text x="489" y="140" font-size="11" text-anchor="middle" fill="#4f46e5">"extract intent + amount"</text>
+        <line x1="688" y1="186" x2="292" y2="186" stroke="#9aa4b1" stroke-width="1.4" marker-end="url(#d1)"/>
+        <text x="489" y="202" font-size="11" text-anchor="middle" fill="#5a6776">↩ {intent, amount:49.99} ☣tainted</text>
+
+        <rect x="300" y="250" width="380" height="58" rx="12" fill="#f7f8ff" stroke="#4f46e5" stroke-width="1.7"/>
+        <text x="490" y="276" font-size="13" font-weight="800" text-anchor="middle" fill="#4f46e5">DETERMINISTIC POLICY ENGINE</text>
+        <text x="490" y="295" font-size="11" text-anchor="middle" fill="#5a6776">taint-aware capabilities · plain code · un-injectable</text>
+        <line x1="180" y1="220" x2="330" y2="248" stroke="#9aa4b1" stroke-width="1.3" marker-end="url(#d1)"/>
+        <text x="210" y="240" font-size="10.5" fill="#5a6776">plan + values</text>
+      </svg>
+      <div class="callout ok">Poisoned prose reaches the parser, <b>never the planner or the hands.</b> Instructions can't ride inside a typed number.</div>
+    </div>
+    <div class="footer"><span>MCP 102 · Dual-LLM</span><span></span></div>
+  </section>
+
+  <!-- 14 TRACE THE ATTACK -->
+  <section class="slide">
+    <p class="kicker">Trace it</p>
+    <h2>Where the attack dies</h2>
+    <div class="fill">
+      <ul>
+        <li>Injected <span class="mono">"refund $9,999"</span> reaches only the <b>quarantined parser</b> — the planner never receives it as text.</li>
+        <li>So the attack can't <b>command</b> anything; at worst it produces a bad <b>value</b> (<code>amount: 9999</code>), arriving <b>tainted</b>.</li>
+        <li>That tainted value hits the <b>deterministic policy engine</b>: <code>9999 &gt; cap → deny / escalate</code>.</li>
+      </ul>
+      <div class="callout ok"><b>Key property:</b> a fooled LLM can produce a bad value, <i>never a bad action</i> — because actions are gated by code the prose can't touch. Blast radius is bounded by your policy, not by how gullible the model is.</div>
+    </div>
+    <div class="footer"><span>MCP 102 · Trace</span><span></span></div>
+  </section>
+
+  <!-- 15 TAINT -->
+  <section class="slide">
+    <p class="kicker">The mechanism underneath</p>
+    <h2>Taint tracking = information-flow control</h2>
+    <div class="two fill">
+      <div>
+        <p><b>Sources are labeled at design time.</b> A tool's definition declares its trust level: <code>get_ticket</code> → untrusted; <code>get_balance</code> → trusted.</p>
+        <p style="margin-top:10px"><b>The harness tags at the boundary.</b> Data crossing in from an untrusted source is stamped <code>tainted</code> automatically — no LLM judgment involved.</p>
+      </div>
+      <div>
+        <div class="callout"><b>Taint is sticky.</b> Anything <i>derived</i> from tainted data inherits the tag: summarize it, extract a field, concatenate it — still tainted. A value is trusted only if <b>every</b> input that fed it was trusted.</div>
+        <p class="small accent2" style="margin-top:14px">This is the same technique security tools use to trace untrusted input for SQL-injection / XSS — ported onto LLM data flow.</p>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 102 · Taint</span><span></span></div>
+  </section>
+
+  <!-- 16 PROVENANCE ROUTING -->
+  <section class="slide">
+    <p class="kicker">How does the planner know to quarantine?</p>
+    <h2>It doesn't decide — provenance does</h2>
+    <div class="fill">
+      <p class="lead">If the planner had to <i>judge</i> "this looks untrusted," that judgment would be the exact thing injection targets. So the decision is taken away from the LLM.</p>
+      <ul>
+        <li>The planner emits a <b>plan/program</b>; routing to the quarantined LLM is a <b>consequence of the taint tag</b>, enforced as that plan runs — not a planner choice.</li>
+        <li>It writes "summarize the ticket"; the executor sees the value is tainted and dispatches that step to the tool-less parser automatically.</li>
+      </ul>
+      <div class="callout"><b>What is "the executor"?</b> The deterministic runtime — <b>plain code in the trusted orchestration layer, the same place the policy engine lives</b> — that runs the planner's emitted plan, carries taint per value, and gates each step. It is <b>not</b> an LLM. <span class="muted">(In LangGraph terms: the graph executor running your nodes &amp; conditional edges.)</span></div>
+      <div class="callout warn"><b>The one human decision:</b> which sources are untrusted. Mislabel a source (an "internal" wiki that contractors can edit) and the machine faithfully ignores a hole.</div>
+    </div>
+    <div class="footer"><span>MCP 102 · Provenance routing</span><span></span></div>
+  </section>
+
+  <!-- 17 TRUSTED MEANING -->
+  <section class="slide">
+    <p class="kicker">A subtlety worth nailing</p>
+    <h2>"Trusted" ≠ "safe"</h2>
+    <div class="two fill">
+      <div>
+        <p><b>Trusted</b> = the <i>principal</i> whose authority the system acts under — bounded by <i>their own</i> permissions. Your authenticated request goes straight to the planner. That's correct.</p>
+      </div>
+      <div>
+        <div class="callout">Injection is the crime of a <b>non-principal</b> (a ticket author) smuggling directives through data to <b>borrow your authority.</b></div>
+        <p class="small accent" style="margin-top:14px"><b>Governing principle:</b> an agent must never hold privileges greater than the trust level of whoever can drive it.</p>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 102 · What "trusted" means</span><span></span></div>
+  </section>
+
+  <!-- 18 DEFAULT DENY / CaMeL -->
+  <section class="slide">
+    <p class="kicker">The crux: how do you cover the red flags?</p>
+    <h2>Default-deny by capability — not red-flag detection</h2>
+    <div class="two fill">
+      <div>
+        <p>Don't enumerate "all the bad things" — that's the blocklist trap, the same losing game as detecting every injection.</p>
+        <p style="margin-top:10px">Flip it: <b>allowlist.</b> Ask "<i>is this exact action, with data of this provenance, explicitly permitted?</i>" If not → denied.</p>
+      </div>
+      <div>
+        <div class="callout ok"><b>Security boundary = completeness of the allowlist</b>, not cleverness of the detector. Default-deny is tractable; "detect all evil" is not.</div>
+        <p class="small muted" style="margin-top:14px">This is <b>capability-based security</b> — and the headline idea in DeepMind's <b>CaMeL</b> ("CApabilities for MachinE Learning"): defeat injection with classic software security, not more AI.</p>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 102 · Default-deny / CaMeL</span><span></span></div>
+  </section>
+
+  <!-- 19 CaMeL SCRIPT -->
+  <section class="slide">
+    <p class="kicker">What it looks like in code</p>
+    <h2>A CaMeL-style plan — the refund scenario</h2>
+    <div class="two fill" style="gap:26px">
+      <div>
+        <pre class="code"><span class="c"># P-LLM plans from the TRUSTED request —</span>
+<span class="c"># it never sees the ticket text.</span>
+ticket = <span class="k">get_ticket</span>(123)        <span class="t"># ☣ tainted</span>
+refund = <span class="k">query_quarantined_llm</span>(  <span class="c"># Q-LLM, no tools</span>
+    <span class="s">"Extract the refund from [ticket]"</span>,
+    output_schema=RefundRequest,
+)                                <span class="t"># ☣ inherited</span>
+<span class="k">issue_refund</span>(               <span class="c"># privileged tool</span>
+    order_id=refund.order_id,
+    amount=refund.amount,        <span class="t"># ☣ tainted</span>
+)</pre>
+        <p class="xs muted" style="margin-top:9px">Not a new language — a <b>locked-down subset of ordinary Python</b> (parsed via <code>ast</code>). Safety is in the interpreter + capabilities, not the syntax.</p>
+      </div>
+      <div>
+        <p class="small" style="margin:0 0 12px"><b>Policies the executor enforces per call:</b></p>
+        <div class="rule"><b>get_ticket</b> → always allowed</div>
+        <div class="rule"><b>query_quarantined_llm</b> → always allowed (holds no tools)</div>
+        <div class="rule"><b>issue_refund</b> → only if <code>amount ≤ 50</code> <i>and</i> the order belongs to the ticket's customer; else escalate to a human</div>
+        <div class="callout ok" style="font-size:13.5px;margin-top:6px">Injected <span class="mono">"refund $9,999"</span> → at worst a <b>tainted</b> <code>amount=9999</code> → fails the <code>issue_refund</code> policy → escalated. The attack dies in code, not in the model.</div>
+      </div>
+    </div>
+    <div class="footer"><span>MCP 102 · CaMeL script</span><span></span></div>
+  </section>
+
+  <!-- 20 MESH SCALE -->
+  <section class="slide">
+    <p class="kicker">Bringing it home</p>
+    <h2>Mesh-scale design: open questions for ~16 verticals</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Granularity:</b> one server per vertical? per capability? per data domain? ("16" may be the wrong number.)</li>
+        <li><b>Taming many servers:</b> gateway + tool search, namespacing to avoid tool-name collisions, a registry.</li>
+        <li><b>Orchestration &amp; trust:</b> where do cross-vertical workflows live, and how is provenance tracked across them?</li>
+        <li><b>Conway's Law:</b> the ownership model is the real constraint — central platform team vs. each vertical owning its own server (with the MCP contract as the team boundary).</li>
+      </ul>
+    </div>
+    <div class="footer"><span>MCP 102 · Mesh-scale design</span><span></span></div>
+  </section>
+
+  <!-- 20 TAKEAWAYS -->
+  <section class="slide">
+    <p class="kicker">Key takeaways</p>
+    <h2>What to walk away with</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Context isn't free:</b> connecting servers costs tokens <i>and</i> degrades tool selection.</li>
+        <li><b>Gateways + tool search</b> tame it — but add ownership, a single point of failure, and silent mis-routing.</li>
+        <li><b>Injection via tool output</b> + the union-of-privileges mesh = confused deputy with effective root.</li>
+        <li><b>RBAC misses it</b> (identity vs provenance). The answer is <b>containment over prevention.</b></li>
+        <li><b>Defense by design:</b> scoped agents, deterministic gates, human-in-the-loop, dual-LLM quarantine, sticky taint, and <b>default-deny capabilities.</b></li>
+      </ul>
+    </div>
+    <div class="footer"><span>MCP 102 · Takeaways</span><span></span></div>
+  </section>
+
+  <!-- 21 FURTHER -->
+  <section class="slide center">
+    <p class="kicker">Go deeper</p>
+    <h1>Further reading</h1>
+    <p class="lead">DeepMind, <i>"Defeating Prompt Injections by Design"</i> (CaMeL) — arXiv:2503.18813 · Simon Willison's CaMeL writeup · the MCP specification's lifecycle &amp; transports sections.</p>
+    <p class="muted small" style="margin-top:20px">Next on the bench: a dedicated CaMeL session, and a LangGraph gate example against the support-ticket scenario.</p>
+    <div class="footer"><span>MCP 102 · fin</span><span></span></div>
+  </section>
+
+  <div class="bar" id="bar"></div>
+</div>
+
+<div class="nav">
+  <button onclick="go(-1)">‹ Prev</button>
+  <button onclick="go(1)">Next ›</button>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  const bar=document.getElementById('bar');
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+  }
+  function go(d){show(i+d)}
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){show(0)} else if(e.key==='End'){show(slides.length-1)}
+  });
+  show(0);
+</script>
+</body>
+</html>

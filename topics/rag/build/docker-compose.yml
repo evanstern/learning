@@ -1,0 +1,31 @@
+# Docker Compose for the-stacks v2
+#
+# ACTIVE (103): Ollama is now a live dependency. OllamaEmbedder calls it to embed
+# corpus chunks and queries (nomic-embed-text, 768-dim). Through lesson 102 the
+# only real runtime dependency was the sqlite-vec DB (a local file), so this service
+# was dormant behind a `profiles: [embeddings]` gate — that gate is removed in 103
+# so a plain `docker compose up -d` brings Ollama up.
+#
+# Usage: scripts/bootstrap.sh (up + pull the model) / scripts/teardown.sh (down + clean).
+#
+# NOTE: the top-level `version:` key was removed in 103 — modern Docker Compose (v2+)
+# ignores it and warns that it's obsolete. The Compose Specification is versionless.
+
+services:
+  # Ollama: local inference server for embedding models. GRADUATED (103): live.
+  # OllamaEmbedder calls this service at http://localhost:11434 (host) /
+  # http://ollama:11434 (container network). The model must be pulled once after
+  # the container is up — bootstrap.sh does `ollama pull nomic-embed-text`.
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      # Named volume persists pulled models across restarts so we don't re-download
+      # nomic-embed-text every `docker compose up`.
+      - ollama_data:/root/.ollama
+    # ACTIVE (103): the `profiles: [embeddings]` gate that kept this dormant in
+    # 101/102 is removed — Ollama starts with the default `docker compose up`.
+
+volumes:
+  ollama_data:

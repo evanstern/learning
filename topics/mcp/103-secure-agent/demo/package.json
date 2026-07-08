@@ -1,0 +1,32 @@
+{
+  "name": "mcp-103-security-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP 103 lecture demo: dual-LLM / taint-tracking / deterministic policy gate (CaMeL-style) over a mock billing refund agent.",
+  "scripts": {
+    "demo": "tsx src/index.ts",
+    "web": "tsx src/web/server.ts",
+    "mcp": "tsx src/mcp/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@langchain/anthropic": "^1.5.0",
+    "@langchain/core": "^1.2.0",
+    "@langchain/langgraph": "^1.4.4",
+    "@modelcontextprotocol/sdk": "^1.20.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "volta": {
+    "node": "22.23.0",
+    "npm": "11.17.0"
+  }
+}
