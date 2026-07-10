@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>102 · Plato — the Forms, the Republic & the first system</title>
+<style>
+  /* Design tokens — the shared praxis contract (see lib/html/base.html). Chrome is token-driven
+     so the deck is theme-aware: dark follows the OS AND the ◐ toggle. NOTE: hand-drawn SVG fills
+     use literal colors (var() doesn't resolve in SVG attrs) — pick colors that read on both
+     themes, or give the figure its own contrasting panel. */
+  :root{
+    --ink:#1b2733; --muted:#5a6776; --accent:#4f46e5; --accent2:#0e9488;
+    --line:#dde3ea; --chip:#f3f5f8; --card:#ffffff; --stage:#e7ebf1; --warn:#b4530a;
+    --callout-bg:#f5f5ff; --warn-bg:#fff6ee; --ok-bg:#eefaf7;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --ink:#e7ecf2; --muted:#9aa7b5; --accent:#8b83ff; --accent2:#3ac9b8;
+      --line:#28323e; --chip:#1d2630; --card:#161d26; --stage:#0e141b; --warn:#e8903f;
+      --callout-bg:#1b1d38; --warn-bg:#33220f; --ok-bg:#0f2a27; }
+  }
+  :root[data-theme="dark"]{ --ink:#e7ecf2; --muted:#9aa7b5; --accent:#8b83ff; --accent2:#3ac9b8;
+    --line:#28323e; --chip:#1d2630; --card:#161d26; --stage:#0e141b; --warn:#e8903f;
+    --callout-bg:#1b1d38; --warn-bg:#33220f; --ok-bg:#0f2a27; }
+  :root[data-theme="light"]{ --ink:#1b2733; --muted:#5a6776; --accent:#4f46e5; --accent2:#0e9488;
+    --line:#dde3ea; --chip:#f3f5f8; --card:#ffffff; --stage:#e7ebf1; --warn:#b4530a;
+    --callout-bg:#f5f5ff; --warn-bg:#fff6ee; --ok-bg:#eefaf7; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--stage);font-family:var(--sans);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .deck{width:min(97vw,1320px);aspect-ratio:16/9;position:relative}
+  .slide{position:absolute;inset:0;background:var(--card);border-radius:18px;
+    box-shadow:0 18px 50px rgba(20,30,50,.16);padding:40px 52px 56px;display:none;
+    flex-direction:column;overflow:hidden}
+  .slide.active{display:flex}
+  .kicker{font-size:17px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 14px}
+  h1{font-size:66px;line-height:1.05;margin:0 0 20px;letter-spacing:-.02em}
+  h2{font-size:48px;line-height:1.12;margin:0 0 22px;letter-spacing:-.01em}
+  p,li{font-size:30px;line-height:1.45;color:var(--ink)}
+  .muted{color:var(--muted)}
+  ul{margin:8px 0 0;padding-left:28px}
+  li{margin:20px 0}
+  .lead{font-size:36px;line-height:1.4;color:var(--muted);max-width:34ch}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:start}
+  .fill{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+  .center{align-items:center;text-align:center;justify-content:center}
+  .chip{display:inline-block;background:var(--chip);border:1px solid var(--line);
+    border-radius:999px;padding:7px 18px;font-size:20px;font-weight:600;margin:5px 7px 5px 0}
+  code,.mono{font-family:var(--mono);background:var(--chip);border:1px solid var(--line);
+    border-radius:6px;padding:2px 9px;font-size:.92em}
+  .callout{border-left:5px solid var(--accent);background:var(--callout-bg);border-radius:0 12px 12px 0;
+    padding:20px 26px;font-size:28px;margin-top:14px}
+  .warn{border-left-color:var(--warn);background:var(--warn-bg)}
+  .ok{border-left-color:var(--accent2);background:var(--ok-bg)}
+  .accent{color:var(--accent)} .accent2{color:var(--accent2)} .warnc{color:var(--warn)}
+  svg{width:100%;height:auto;display:block}
+  .figure{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+  .figure svg{max-height:100%}
+  .footer{position:absolute;left:52px;right:52px;bottom:16px;display:flex;
+    justify-content:space-between;align-items:center;font-size:16px;color:var(--muted)}
+  .footer .pageno{font-variant-numeric:tabular-nums}
+  .bar{position:absolute;left:0;bottom:0;height:5px;background:var(--accent);
+    border-radius:0 0 0 18px;transition:width .25s ease}
+  .nav{position:fixed;bottom:14px;right:18px;display:flex;gap:8px;z-index:10}
+  .nav button{font-family:var(--sans);font-size:17px;border:1px solid var(--line);
+    background:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;color:var(--ink)}
+  .nav button:hover{background:var(--chip)}
+  .title-wrap{display:flex;flex-direction:column;justify-content:center;height:100%}
+  .small{font-size:24px}
+  [data-tip]{cursor:help}
+  .qb{display:inline-block;background:var(--accent2);color:#fff;border-radius:50%;width:28px;height:28px;
+    line-height:28px;text-align:center;font-size:18px;font-weight:700;vertical-align:2px}
+  .tip-pop{position:fixed;z-index:50;max-width:420px;background:var(--ink);color:#fff;
+    font-size:19px;line-height:1.4;padding:13px 17px;border-radius:10px;pointer-events:none;
+    box-shadow:0 8px 24px rgba(20,30,50,.28);opacity:0;transform:translateY(4px);
+    transition:opacity .12s ease,transform .12s ease}
+  .tip-pop.show{opacity:1;transform:translateY(0)}
+  @media print{
+    body{display:block;background:#fff;overflow:visible}
+    .deck{width:100%;aspect-ratio:auto}
+    .slide{display:flex;position:relative;page-break-after:always;box-shadow:none;
+      border:1px solid var(--line);margin-bottom:18px;height:96vh}
+    .nav{display:none}
+    .tip-pop{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide active">
+    <div class="title-wrap">
+      <p class="kicker">Philosophy · Lesson 102</p>
+      <h1>Plato<br><span class="muted">the Forms, the Republic<br>&amp; the first system</span></h1>
+      <p class="lead">Socrates asked “What is X?” and died without answers. His student built the first complete answer — then published the best attack on it himself.</p>
+      <p class="muted small" style="margin-top:30px">c. 428–347 BC · from the 101 Socrates lesson · scan solo or follow along live</p>
+    </div>
+    <div class="footer"><span>Philosophy 102</span><span>↦ arrow keys / space to advance</span></div>
+  </section>
+
+  <!-- 2 WHERE 101 LEFT OFF -->
+  <section class="slide">
+    <p class="kicker">The problem · inherited wreckage</p>
+    <h2>399 BC: nothing on file</h2>
+    <div class="fill">
+      <ul>
+        <li><b>The elenchus only tore down.</b><br><span class="muted small">— every definition of courage, piety, justice died by counterexample; the sessions ended in <span data-tip="Aporia: 'no way through' — the puzzled, stuck state a Socratic dialogue ends in. An improved state of still not knowing.">aporia&nbsp;<span class="qb">?</span></span>.</span></li>
+        <li><b>Socrates wrote nothing, then Athens killed him.</b><br><span class="muted small">— no doctrine survived him. Just the questions, and a student who was in the room.</span></li>
+        <li><b>The fork:</b> the sophists said <i>so there are no answers — learn rhetoric.</i><br><span class="muted small">— careful: “nobody found the answer yet” never proved “no answer exists.” Plato refuses the skeptic’s exit.</span></li>
+      </ul>
+    </div>
+    <div class="footer"><span>Plato · the inheritance</span><span></span></div>
+  </section>
+
+  <!-- 3 THE DILEMMA -->
+  <section class="slide">
+    <p class="kicker">The problem · why it was hard</p>
+    <h2>Two giants left a dilemma</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Heraclitus: everything flows.</b><br><span class="muted small">— the sensible world never holds still; any definition pinned to it is stale on arrival.</span></li>
+        <li><b>Parmenides: the knowable must be permanent.</b><br><span class="muted small">— what’s truly real doesn’t change. Change is somehow unreal.</span></li>
+      </ul>
+      <div class="callout"><b>The real inherited problem:</b> “What is justice?” has a stable answer only if there’s a stable <i>object</i> for the answer to be about — and nothing you can see or touch holds still enough.</div>
+    </div>
+    <div class="footer"><span>Plato · flux vs. permanence</span><span></span></div>
+  </section>
+
+  <!-- 4 DIAGRAM: TWO REALMS -->
+  <section class="slide">
+    <p class="kicker">The solution · the move</p>
+    <h2>Don’t redescribe one world — partition into two</h2>
+    <div class="figure">
+      <svg viewBox="0 0 960 420" role="img" aria-label="Two realms: intelligible Forms above, sensible particulars below, joined by participation">
+        <rect x="60" y="30" width="840" height="150" rx="14" fill="#eef0ff" stroke="#4f46e5" stroke-width="3"/>
+        <text x="480" y="70" text-anchor="middle" font-size="30" font-weight="700" fill="#1b2733" font-family="sans-serif">INTELLIGIBLE REALM — the Forms</text>
+        <text x="480" y="108" text-anchor="middle" font-size="24" fill="#5a6776" font-family="sans-serif">Justice Itself · Equality Itself · The Cat — eternal, unchanging, non-physical</text>
+        <text x="480" y="145" text-anchor="middle" font-size="24" fill="#4f46e5" font-family="sans-serif">Parmenides is completely right about THIS realm</text>
+        <rect x="60" y="250" width="840" height="150" rx="14" fill="#eefaf7" stroke="#0e9488" stroke-width="3"/>
+        <text x="480" y="290" text-anchor="middle" font-size="30" font-weight="700" fill="#1b2733" font-family="sans-serif">SENSIBLE WORLD — the particulars</text>
+        <text x="480" y="328" text-anchor="middle" font-size="24" fill="#5a6776" font-family="sans-serif">just acts, equal-ish sticks, this cat — always in flux, never quite holding still</text>
+        <text x="480" y="365" text-anchor="middle" font-size="24" fill="#0e9488" font-family="sans-serif">Heraclitus is completely right about THIS realm</text>
+        <line x1="480" y1="250" x2="480" y2="180" stroke="#b4530a" stroke-width="4" marker-end="url(#arrowA)"/>
+        <text x="500" y="222" font-size="24" font-weight="700" fill="#b4530a" font-family="sans-serif">participation</text>
+        <defs><marker id="arrowA" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="#b4530a"/></marker></defs>
+      </svg>
+    </div>
+    <div class="footer"><span>Plato · the theory of Forms</span><span></span></div>
+  </section>
+
+  <!-- 5 WHAT IT FIXES -->
+  <section class="slide">
+    <p class="kicker">The solution · payoff #1</p>
+    <h2>Why every definition died — diagnosed</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Euthyphro pointed at an instance.</b> Laches pointed at an instance.<br><span class="muted small">— instances both are and are not F (brave here, rash there). Any instance admits a counterexample. The failure was <i>systematic</i> because they kept answering with members of the flux-world.</span></li>
+        <li><b>The question was always asking for the Form.</b><br><span class="muted small">— the elenchus wasn’t broken; it was correctly rejecting category errors, one after another.</span></li>
+      </ul>
+      <div class="callout ok">“The image of the cat is just an image of <b>The Cat</b>.” <span class="muted">— the learner, unprompted, reinventing the vocabulary of Book VII</span></div>
+    </div>
+    <div class="footer"><span>Plato · the elenchus explained</span><span></span></div>
+  </section>
+
+  <!-- 6 ACCESS: MATH -->
+  <section class="slide">
+    <p class="kicker">The solution · access</p>
+    <h2>You have never seen a circle</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Every drawn circle is a jagged mess</b> at some resolution; no two sticks in history were exactly equal.<br><span class="muted small">— the senses have never delivered a perfect circle or perfect equality. Not once.</span></li>
+        <li><b>Yet you hold counterexample-proof knowledge about them.</b><br><span class="muted small">— π, equidistance, theorems that hold forever. You even use “exactly equal” to judge the sticks deficient.</span></li>
+      </ul>
+      <div class="callout"><b>So “no sensory access” never meant “no access.”</b> Mathematics is the standing proof that intellect reaches what the senses can’t — the discipline over the Academy’s door.</div>
+    </div>
+    <div class="footer"><span>Plato · non-sensory access</span><span></span></div>
+  </section>
+
+  <!-- 7 DIAGRAM: DIVIDED LINE -->
+  <section class="slide">
+    <p class="kicker">The solution · epistemology</p>
+    <h2>The Divided Line — four grades of cognition</h2>
+    <div class="figure">
+      <svg viewBox="0 0 960 440" role="img" aria-label="The Divided Line: eikasia, pistis, dianoia, noesis ascending; doxa below, episteme above">
+        <rect x="120" y="330" width="700" height="72" rx="10" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="150" y="360" font-size="26" font-weight="700" fill="#1b2733" font-family="sans-serif">1 · eikasia</text>
+        <text x="150" y="390" font-size="21" fill="#5a6776" font-family="sans-serif">images, shadows, reflections — “fleeting after-images”</text>
+        <rect x="120" y="240" width="700" height="72" rx="10" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="150" y="270" font-size="26" font-weight="700" fill="#1b2733" font-family="sans-serif">2 · pistis</text>
+        <text x="150" y="300" font-size="21" fill="#5a6776" font-family="sans-serif">ordinary perception of physical things</text>
+        <rect x="120" y="130" width="700" height="72" rx="10" fill="#eef0ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="150" y="160" font-size="26" font-weight="700" fill="#1b2733" font-family="sans-serif">3 · dianoia</text>
+        <text x="150" y="190" font-size="21" fill="#5a6776" font-family="sans-serif">mathematics — real access, but reasons FROM unexamined hypotheses</text>
+        <rect x="120" y="40" width="700" height="72" rx="10" fill="#eef0ff" stroke="#4f46e5" stroke-width="3"/>
+        <text x="150" y="70" font-size="26" font-weight="700" fill="#1b2733" font-family="sans-serif">4 · noēsis</text>
+        <text x="150" y="100" font-size="21" fill="#5a6776" font-family="sans-serif">dialectic — examines the hypotheses themselves, up to the Form of the Good</text>
+        <text x="60" y="380" font-size="24" font-weight="700" fill="#0e9488" font-family="sans-serif" transform="rotate(-90 60 380)">DOXA — opinion</text>
+        <text x="60" y="160" font-size="24" font-weight="700" fill="#4f46e5" font-family="sans-serif" transform="rotate(-90 60 160)">EPISTĒMĒ</text>
+        <line x1="870" y1="390" x2="870" y2="60" stroke="#b4530a" stroke-width="4" marker-end="url(#arrowB)"/>
+        <text x="905" y="240" font-size="22" font-weight="700" fill="#b4530a" font-family="sans-serif" transform="rotate(-90 905 240)">education climbs</text>
+        <defs><marker id="arrowB" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="#b4530a"/></marker></defs>
+      </svg>
+    </div>
+    <div class="footer"><span>Plato · Republic VI, 509d–511e</span><span></span></div>
+  </section>
+
+  <!-- 8 MATH DEMOTED -->
+  <section class="slide">
+    <p class="kicker">The solution · the twist</p>
+    <h2>Plato demoted mathematics too</h2>
+    <div class="fill">
+      <ul>
+        <li><b>The objection raised in session:</b> math is “proven incomplete” — it can’t certify its own foundations, so how can it carry truth?<br><span class="muted small">— a Gödel-flavored version of a real worry.</span></li>
+        <li><b>Plato’s own complaint, 2,300 years earlier:</b> the geometer posits axioms and builds <i>downward</i>, never examining them.<br><span class="muted small">— that’s exactly why dianoia ranks third, not fourth.</span></li>
+      </ul>
+      <div class="callout ok">“Logic is too rigid to capture truth” isn’t the skeptic’s exit here — it’s the ladder’s <b>middle rung</b>. Plato reads it as evidence something sits <i>above</i> formal reasoning, not that nothing does.</div>
+    </div>
+    <div class="footer"><span>Plato · dianoia vs. noēsis</span><span></span></div>
+  </section>
+
+  <!-- 9 THE TETHER -->
+  <section class="slide">
+    <p class="kicker">The solution · knowledge vs. opinion</p>
+    <h2>The road to Larissa: what the tether buys</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Two guides, both get you there.</b> One knows the road; one holds a correct belief.<br><span class="muted small">— true opinion is exactly as useful as knowledge, <i>every time it happens to be true</i>.</span></li>
+        <li><b>Knowledge = true opinion tied down by the reason why</b> <span data-tip="Aitias logismos (Meno 98a): 'an account of the cause.' Plato's image: true opinions are like Daedalus's statues — so lifelike they run away unless tied down.">(<i>aitias logismos</i>)&nbsp;<span class="qb">?</span></span><br><span class="muted small">— “the gods make the sun rise” predicts every sunrise and explains nothing: right on-distribution, dead the first off-script Tuesday.</span></li>
+        <li><b>The tether is also armor:</b> an opinion that was argued <i>into</i> you can be argued <i>out</i> of you.<br><span class="muted small">— that’s the demagogue’s whole trade. Hold that thought until the rulers show up.</span></li>
+      </ul>
+    </div>
+    <div class="footer"><span>Plato · Meno</span><span></span></div>
+  </section>
+
+  <!-- 10 OPPOSITES -> PARTITION -->
+  <section class="slide">
+    <p class="kicker">The soul · the argument</p>
+    <h2>The thirsty man who won’t drink</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Principle of opposites:</b> nothing does or undergoes opposites, in the same respect, at the same time.<br><span class="muted small">— one thing can’t pull left and right at once <i>in the same part of itself</i>.</span></li>
+        <li><b>The case:</b> parched, straining toward the (plague-tainted) drink — and holding back. One man, one moment.<br><span class="muted small">— conclusion forced: <b>more than one decisionmaker</b> in one skull. And no more than that — the argument buys ≥2, not three.</span></li>
+      </ul>
+      <div class="callout warn"><b>Plato pre-registered the axiom’s status</b> (437a): “let us proceed on this hypothesis — if it ever seems otherwise, everything that follows is lost.” By his own Line, this argument is dianoia. Demolition clause on file.</div>
+    </div>
+    <div class="footer"><span>Plato · Republic IV</span><span></span></div>
+  </section>
+
+  <!-- 11 THREE PARTS -->
+  <section class="slide">
+    <p class="kicker">The soul · counting parts</p>
+    <h2>The conflict criterion buys exactly three</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Parts are distinct iff they can oppose each other</b> — every new part must be purchased with an observed civil war.</li>
+        <li><b>Leontius</b> rages <i>at his own craving</i> to stare at corpses → <span class="accent2">spirit ≠ appetite</span>.<br>
+            <b>Odysseus</b> strikes his chest — “Endure, my heart” — hot anger defying his own verdict → <span class="accent">spirit ≠ reason</span>. Toddlers and dogs have it pre-reason.</li>
+      </ul>
+      <p style="margin-top:10px"><span class="chip">reason · <i>logistikon</i> — loves truth, sees the whole board</span> <span class="chip">spirit · <span data-tip="Thumos: the honor–anger–indignation drive. The part that takes things personally. NOT 'spirituality' — no ghost, no soul-stuff.">thumos&nbsp;<span class="qb">?</span></span> — takes things personally</span> <span class="chip">appetite · <i>epithumētikon</i> — wants stuff, blind, biggest</span></p>
+      <p class="muted small" style="margin-top:8px">Honest label: inference to the best explanation, not a deduction that three is final — Aristotle often shrugged back to two.</p>
+    </div>
+    <div class="footer"><span>Plato · Republic IV, 439e–441c</span><span></span></div>
+  </section>
+
+  <!-- 12 AKRASIA -->
+  <section class="slide">
+    <p class="kicker">The soul · the 101 fight, settled</p>
+    <h2>Akrasia vindicated: the 11pm coup</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Socrates (101):</b> no one errs willingly — the agent is one thing; “overcome by pleasure” is a measurement error.</li>
+        <li><b>Plato (102):</b> the agent is <i>not</i> one thing. Appetite is an independent motivational source — it doesn’t lose arguments gracefully; it just pulls.<br><span class="muted small">— the diet failing at 11pm is a <b>coup</b>, not bad arithmetic: a part that ignores the math outvoted the part that did it.</span></li>
+      </ul>
+      <div class="callout ok">The learner argued akrasia was real in 101 — against Socrates. Plato, the loyal student, rebuilt the entire soul to agree. <span class="muted">(Fine print: partition best explains <i>impetuous</i> akrasia; the cold-blooded case stays slippery.)</span></div>
+    </div>
+    <div class="footer"><span>Plato · contra Protagoras 352b</span><span></span></div>
+  </section>
+
+  <!-- 13 DIAGRAM: CITY-SOUL -->
+  <section class="slide">
+    <p class="kicker">Justice · the analogy</p>
+    <h2>One definition, two scales</h2>
+    <div class="figure">
+      <svg viewBox="0 0 960 430" role="img" aria-label="City classes mapped to soul parts: guardians-reason, auxiliaries-spirit, producers-appetite; justice is each part doing its own work">
+        <text x="255" y="42" text-anchor="middle" font-size="28" font-weight="700" fill="#4f46e5" font-family="sans-serif">KALLIPOLIS (city)</text>
+        <text x="705" y="42" text-anchor="middle" font-size="28" font-weight="700" fill="#0e9488" font-family="sans-serif">PSYCHE (soul)</text>
+        <rect x="80" y="70" width="350" height="90" rx="12" fill="#eef0ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="255" y="108" text-anchor="middle" font-size="26" font-weight="700" fill="#1b2733" font-family="sans-serif">guardians</text>
+        <text x="255" y="140" text-anchor="middle" font-size="20" fill="#5a6776" font-family="sans-serif">rule — they alone see the whole</text>
+        <rect x="530" y="70" width="350" height="90" rx="12" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="705" y="108" text-anchor="middle" font-size="26" font-weight="700" fill="#1b2733" font-family="sans-serif">reason</text>
+        <text x="705" y="140" text-anchor="middle" font-size="20" fill="#5a6776" font-family="sans-serif">judges — weighs each part's good</text>
+        <rect x="80" y="180" width="350" height="90" rx="12" fill="#eef0ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="255" y="218" text-anchor="middle" font-size="26" font-weight="700" fill="#1b2733" font-family="sans-serif">auxiliaries</text>
+        <text x="255" y="250" text-anchor="middle" font-size="20" fill="#5a6776" font-family="sans-serif">defend — enforce the rulers' judgment</text>
+        <rect x="530" y="180" width="350" height="90" rx="12" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="705" y="218" text-anchor="middle" font-size="26" font-weight="700" fill="#1b2733" font-family="sans-serif">spirit</text>
+        <text x="705" y="250" text-anchor="middle" font-size="20" fill="#5a6776" font-family="sans-serif">enforces — sides with reason when trained</text>
+        <rect x="80" y="290" width="350" height="90" rx="12" fill="#eef0ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="255" y="328" text-anchor="middle" font-size="26" font-weight="700" fill="#1b2733" font-family="sans-serif">producers</text>
+        <text x="255" y="360" text-anchor="middle" font-size="20" fill="#5a6776" font-family="sans-serif">provide — farmers, smiths, merchants</text>
+        <rect x="530" y="290" width="350" height="90" rx="12" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="705" y="328" text-anchor="middle" font-size="26" font-weight="700" fill="#1b2733" font-family="sans-serif">appetite</text>
+        <text x="705" y="360" text-anchor="middle" font-size="20" fill="#5a6776" font-family="sans-serif">fuels — desire for food, money, more</text>
+        <line x1="430" y1="115" x2="530" y2="115" stroke="#b4530a" stroke-width="3" marker-end="url(#arrowC)"/>
+        <line x1="430" y1="225" x2="530" y2="225" stroke="#b4530a" stroke-width="3" marker-end="url(#arrowC)"/>
+        <line x1="430" y1="335" x2="530" y2="335" stroke="#b4530a" stroke-width="3" marker-end="url(#arrowC)"/>
+        <text x="480" y="420" text-anchor="middle" font-size="25" font-weight="700" fill="#b4530a" font-family="sans-serif">JUSTICE = each part doing its own work — at both scales (433a)</text>
+        <defs><marker id="arrowC" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="#b4530a"/></marker></defs>
+      </svg>
+    </div>
+    <div class="footer"><span>Plato · Republic II–IV</span><span></span></div>
+  </section>
+
+  <!-- 14 JUSTICE INVERTED -->
+  <section class="slide">
+    <p class="kicker">Justice · the elegant part</p>
+    <h2>Define justice structurally — evil falls out for free</h2>
+    <div class="fill">
+      <ul>
+        <li><b>The session’s attempt:</b> “justice keeps the parts of a system from doing Evil (to be defined later…) to each other.”<br><span class="muted small">— built on an undefined primitive, and the learner felt it immediately.</span></li>
+        <li><b>Plato’s inversion:</b> justice is an <i>ordering</i> — each part doing its own work, none meddling. Ask “what is evil?” and the answer is now <b>derived</b>: disorder. A part out of its lane.<br><span class="muted small">— justice : soul :: health : body. Leontius wasn’t wicked; he was misgoverned.</span></li>
+      </ul>
+      <div class="callout">Injustice = <b>civil war among the parts</b> — usurpation by a part that can’t see the whole board.</div>
+    </div>
+    <div class="footer"><span>Plato · Republic IV, 433a–444e</span><span></span></div>
+  </section>
+
+  <!-- 15 GYGES + DECLINE -->
+  <section class="slide">
+    <p class="kicker">Justice · why it pays</p>
+    <h2>Gyges answered: the tyrant is a hostage</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Glaucon’s challenge:</b> with an invisibility ring, would anyone stay just? Prove justice pays <i>in itself</i>.</li>
+        <li><b>The answer from the inside:</b> the unjust soul is a coup regime. The tyrannical soul — fully captured by insatiable appetite — is <b>enslaved</b>: every hour serves a master that grows hungrier when fed.<br><span class="muted small">— injustice can’t pay because there’s no unified “you” left to collect the winnings.</span></li>
+      </ul>
+      <p style="margin-top:6px"><span class="chip">aristocracy</span>→<span class="chip">timocracy · spirit rules</span>→<span class="chip">oligarchy</span>→<span class="chip">democracy</span>→<span class="chip">tyranny · appetite rules</span></p>
+      <p class="muted small">The five-regime decline (Books VIII–IX), one ruling part lower each step — “spirit-rule is dangerous too” has a name: timocracy.</p>
+    </div>
+    <div class="footer"><span>Plato · Republic VIII–IX</span><span></span></div>
+  </section>
+
+  <!-- 16 PHILOSOPHER-KINGS -->
+  <section class="slide">
+    <p class="kicker">Justice · who rules</p>
+    <h2>The reluctance filter + the tether</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Negative filter (derived cold in session):</b> “if you don’t <i>want</i> the job, appetite isn’t making the decisions — by definition.”<br><span class="muted small">— Plato’s corollary (520d): the city whose rulers must be compelled is the best governed.</span></li>
+        <li><b>Positive credential:</b> cities run on opinions, and untied opinions are demagogue food. The legitimate ruler holds knowledge that <i>cannot be argued loose</i> — the tether, anchored in the Forms.<br><span class="muted small">— hence 473c: no rest from evils until philosophers rule, or rulers philosophize.</span></li>
+        <li><b>The ship of state:</b> brawling sailors dismiss the navigator as a “useless star-gazer.”<br><span class="muted small">— the uselessness indicts the crew, not the stars.</span></li>
+      </ul>
+    </div>
+    <div class="footer"><span>Plato · Republic V–VI</span><span></span></div>
+  </section>
+
+  <!-- 17 DIAGRAM: CAVE -->
+  <section class="slide">
+    <p class="kicker">The cave · Republic VII</p>
+    <h2>The most famous image in philosophy</h2>
+    <div class="figure">
+      <svg viewBox="0 0 960 400" role="img" aria-label="The cave: prisoners watching shadows, fire and puppeteers behind, ascent to the sun outside">
+        <path d="M20,380 L20,60 L560,60 L560,380 Z" fill="#1b2733" opacity="0.88"/>
+        <rect x="40" y="90" width="14" height="240" fill="#5a6776"/>
+        <text x="47" y="75" text-anchor="middle" font-size="20" fill="#9aa7b5" font-family="sans-serif">wall</text>
+        <path d="M58,140 l26,-14 v9 l22,0 v22 l-22,0 v9 Z" fill="#e8903f"/>
+        <path d="M58,215 l26,-14 v9 l22,0 v22 l-22,0 v9 Z" fill="#e8903f"/>
+        <path d="M58,290 l26,-14 v9 l22,0 v22 l-22,0 v9 Z" fill="#e8903f"/>
+        <text x="86" y="345" text-anchor="middle" font-size="20" fill="#e8903f" font-family="sans-serif">shadows</text>
+        <circle cx="190" cy="150" r="16" fill="#9aa7b5"/><rect x="180" y="168" width="20" height="52" rx="6" fill="#9aa7b5"/>
+        <circle cx="250" cy="150" r="16" fill="#9aa7b5"/><rect x="240" y="168" width="20" height="52" rx="6" fill="#9aa7b5"/>
+        <circle cx="310" cy="150" r="16" fill="#9aa7b5"/><rect x="300" y="168" width="20" height="52" rx="6" fill="#9aa7b5"/>
+        <text x="250" y="250" text-anchor="middle" font-size="20" fill="#9aa7b5" font-family="sans-serif">prisoners (chained, facing the wall)</text>
+        <rect x="380" y="120" width="90" height="14" fill="#0e9488"/>
+        <circle cx="425" cy="100" r="13" fill="#0e9488"/>
+        <text x="425" y="160" text-anchor="middle" font-size="20" fill="#3ac9b8" font-family="sans-serif">puppeteers carrying artifacts</text>
+        <circle cx="440" cy="300" r="26" fill="#e8903f"/>
+        <path d="M440,264 v-16 M440,336 v16 M404,300 h-16 M476,300 h16 M415,275 l-11,-11 M465,275 l11,-11 M415,325 l-11,11 M465,325 l11,11" stroke="#e8903f" stroke-width="4"/>
+        <text x="440" y="372" text-anchor="middle" font-size="20" fill="#e8903f" font-family="sans-serif">fire</text>
+        <path d="M560,380 L560,60 L700,60 L820,40" fill="none" stroke="#5a6776" stroke-width="3" stroke-dasharray="8 7"/>
+        <path d="M575,340 L640,250 L700,190 L760,130" fill="none" stroke="#b4530a" stroke-width="5" marker-end="url(#arrowD)"/>
+        <text x="640" y="310" font-size="21" font-weight="700" fill="#b4530a" font-family="sans-serif">the climb</text>
+        <text x="620" y="342" font-size="19" fill="#b4530a" font-family="sans-serif">(forced, painful, unasked)</text>
+        <circle cx="850" cy="90" r="42" fill="#e8903f"/>
+        <path d="M850,32 v-18 M850,148 v18 M792,90 h-18 M908,90 h18 M812,52 l-14,-14 M888,52 l14,-14 M812,128 l-14,14 M888,128 l14,14" stroke="#e8903f" stroke-width="5"/>
+        <text x="850" y="185" text-anchor="middle" font-size="22" font-weight="700" fill="#b4530a" font-family="sans-serif">the sun</text>
+        <text x="850" y="213" text-anchor="middle" font-size="19" fill="#b4530a" font-family="sans-serif">= the Form of the Good</text>
+        <path d="M740,170 L660,240 L600,310" fill="none" stroke="#4f46e5" stroke-width="4" stroke-dasharray="10 8" marker-end="url(#arrowE)"/>
+        <text x="742" y="262" font-size="21" font-weight="700" fill="#4f46e5" font-family="sans-serif">the return</text>
+        <text x="742" y="290" font-size="19" fill="#4f46e5" font-family="sans-serif">(also compelled —</text>
+        <text x="742" y="314" font-size="19" fill="#4f46e5" font-family="sans-serif">to unchain, not to visit)</text>
+        <defs>
+          <marker id="arrowD" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#b4530a"/></marker>
+          <marker id="arrowE" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#4f46e5"/></marker>
+        </defs>
+      </svg>
+    </div>
+    <div class="footer"><span>Plato · Republic VII, 514a–517a</span><span></span></div>
+  </section>
+
+  <!-- 18 CAVE DECODED -->
+  <section class="slide">
+    <p class="kicker">The cave · decoded</p>
+    <h2>Four readings most people miss</h2>
+    <div class="fill">
+      <ul>
+        <li><b>The puppeteers are people.</b> The carried objects are <i>man-made artifacts</i> — the wall is curated by poets, sophists, politicians. Programming, not nature.<br><span class="muted small">— “the Universe or Gods” is the comforting reading. Plato’s is worse.</span></li>
+        <li><b>Education is <i>periagōgē</i></b> — turning the whole soul around (518d). Not pouring sight into blind eyes; the faculty was always there, aimed at the wall.</li>
+        <li><b>The prisoners’ fear is <i>justified by cave-data</i>.</b> By wall-epistemology, killing the stumbling returner is the rational move. That’s the indictment.</li>
+        <li><b>The returning prisoner is Socrates.</b> Written ~25 years after the hemlock. The ending isn’t allegory — it’s memoir.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Plato · the cave, read closely</span><span></span></div>
+  </section>
+
+  <!-- 19 PARMENIDES SETUP -->
+  <section class="slide">
+    <p class="kicker">Failure modes · Plato vs. Plato</p>
+    <h2>The stickler’s stickler attacks his own theory</h2>
+    <div class="fill">
+      <p class="lead" style="max-width:44ch">Late in life, Plato staged the hardest objections to the Forms himself — the <i>Parmenides</i>: young Socrates presents the theory; old Parmenides dismantles it. No rebuttal is printed.</p>
+      <p style="margin-top:16px">The worst blow needs only three premises — each one something this lesson endorsed:</p>
+      <ul>
+        <li><b>One-over-Many</b> — any plurality of F things has ONE Form of F over it. <span class="muted small">(the whole answer to Euthyphro)</span></li>
+        <li><b>Self-Predication</b> — the Form of F is itself F. <span class="muted small">(copies resemble the original in a respect it has)</span></li>
+        <li><b>Non-Identity</b> — no Form is a member of the plurality it stands over. <span class="muted small">(The Cat is not any cat)</span></li>
+      </ul>
+    </div>
+    <div class="footer"><span>Plato · Parmenides 130e–134e</span><span></span></div>
+  </section>
+
+  <!-- 20 DIAGRAM: THIRD MAN -->
+  <section class="slide">
+    <p class="kicker">Failure modes · the Third Man</p>
+    <h2>The machine’s output is always fresh input</h2>
+    <div class="figure">
+      <svg viewBox="0 0 960 410" role="img" aria-label="Third Man regress: the roster of cats grows a new Form each cycle, forever">
+        <rect x="40" y="50" width="250" height="100" rx="12" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="165" y="92" text-anchor="middle" font-size="24" font-weight="700" fill="#1b2733" font-family="sans-serif">{ Tom, Felix }</text>
+        <text x="165" y="126" text-anchor="middle" font-size="20" fill="#5a6776" font-family="sans-serif">a plurality of cats</text>
+        <line x1="290" y1="100" x2="380" y2="100" stroke="#5a6776" stroke-width="3" marker-end="url(#arrowF)"/>
+        <text x="335" y="82" text-anchor="middle" font-size="18" fill="#5a6776" font-family="sans-serif">rule 1</text>
+        <rect x="380" y="50" width="230" height="100" rx="12" fill="#eef0ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="495" y="92" text-anchor="middle" font-size="24" font-weight="700" fill="#1b2733" font-family="sans-serif">The Cat</text>
+        <text x="495" y="126" text-anchor="middle" font-size="20" fill="#5a6776" font-family="sans-serif">one Form over them</text>
+        <line x1="610" y1="100" x2="700" y2="100" stroke="#b4530a" stroke-width="3" marker-end="url(#arrowG)"/>
+        <text x="655" y="82" text-anchor="middle" font-size="18" fill="#b4530a" font-family="sans-serif">rule 2</text>
+        <rect x="700" y="50" width="230" height="100" rx="12" fill="#fff6ee" stroke="#b4530a" stroke-width="2"/>
+        <text x="815" y="92" text-anchor="middle" font-size="24" font-weight="700" fill="#1b2733" font-family="sans-serif">…is itself a cat</text>
+        <text x="815" y="126" text-anchor="middle" font-size="20" fill="#5a6776" font-family="sans-serif">so it joins the roster</text>
+        <path d="M815,150 C815,215 500,175 320,205" fill="none" stroke="#b4530a" stroke-width="4" stroke-dasharray="10 8" marker-end="url(#arrowG)"/>
+        <rect x="40" y="210" width="330" height="100" rx="12" fill="#eefaf7" stroke="#0e9488" stroke-width="2"/>
+        <text x="205" y="252" text-anchor="middle" font-size="24" font-weight="700" fill="#1b2733" font-family="sans-serif">{ Tom, Felix, The Cat }</text>
+        <text x="205" y="286" text-anchor="middle" font-size="20" fill="#5a6776" font-family="sans-serif">a NEW plurality of cats</text>
+        <line x1="370" y1="260" x2="460" y2="260" stroke="#5a6776" stroke-width="3" marker-end="url(#arrowF)"/>
+        <text x="415" y="242" text-anchor="middle" font-size="18" fill="#5a6776" font-family="sans-serif">rules 1+3</text>
+        <rect x="460" y="210" width="240" height="100" rx="12" fill="#eef0ff" stroke="#4f46e5" stroke-width="3"/>
+        <text x="580" y="252" text-anchor="middle" font-size="24" font-weight="700" fill="#1b2733" font-family="sans-serif">The Cat 2</text>
+        <text x="580" y="286" text-anchor="middle" font-size="20" fill="#5a6776" font-family="sans-serif">forced: rule 3 bars The Cat</text>
+        <line x1="700" y1="260" x2="790" y2="260" stroke="#b4530a" stroke-width="3" marker-end="url(#arrowG)"/>
+        <text x="845" y="252" text-anchor="middle" font-size="26" font-weight="700" fill="#b4530a" font-family="sans-serif">The Cat 3…</text>
+        <text x="845" y="286" text-anchor="middle" font-size="22" fill="#b4530a" font-family="sans-serif">forever</text>
+        <text x="480" y="375" text-anchor="middle" font-size="25" font-weight="700" fill="#1b2733" font-family="sans-serif">The pitch was ONE stable answer per question. The premises guarantee there is never one.</text>
+        <defs>
+          <marker id="arrowF" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#5a6776"/></marker>
+          <marker id="arrowG" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#b4530a"/></marker>
+        </defs>
+      </svg>
+    </div>
+    <div class="footer"><span>Plato · the regress (Aristotle’s label: “Third Man”)</span><span></span></div>
+  </section>
+
+  <!-- 21 THE ESCAPE -->
+  <section class="slide">
+    <p class="kicker">Failure modes · the escape</p>
+    <h2>Kill Self-Predication: the Form is a Class</h2>
+    <div class="fill">
+      <div class="callout ok" style="font-size:32px">“My <code>Cat</code> class <b>defines</b> how a cat meows. It is <b>not a cat</b>.” <span class="muted small">— the learner’s own fix, stated cold</span></div>
+      <ul style="margin-top:18px">
+        <li><b>The spec is not an instance.</b> If The Cat is not a cat, it never joins the roster — the crank jams. Regress dead at the cost of one premise. <span class="muted small">(the majority modern solution)</span></li>
+        <li><b>What it costs Plato:</b> the copy/resemblance story dies; participation is left unexplained; and Beauty Itself deflates from swoon-worthy (<i>Symposium</i>) to spec sheet.<br><span class="muted small">— “Forms always sounded like bullshit” = rejecting the super-exemplar version. That’s siding with late Plato against young Plato.</span></li>
+      </ul>
+    </div>
+    <div class="footer"><span>Plato · dropping premise 2</span><span></span></div>
+  </section>
+
+  <!-- 22 WHAT ARE FORMS -->
+  <section class="slide">
+    <p class="kicker">Failure modes · the ontology, paid</p>
+    <h2>What ARE Forms? Real like the number 7</h2>
+    <div class="fill">
+      <ul>
+        <li><b>Could you touch one?</b> No — in principle, never. <b>Imaginary, then?</b> Is 7 imaginary? No location, no mass, causally inert — yet (arguably) 7’s primality doesn’t depend on any mind. Forms claim <i>that</i> kind of reality.</li>
+        <li><b>“You can’t prove this” — correct.</b> Mathematical platonism vs. nominalism is live and unresolved. And “could I touch one?” is <span data-tip="Benacerraf (1973): if mathematical objects are non-physical and causally inert, they can't cause anything in a brain — so how could a physical creature ever come to know about them?">Benacerraf’s access problem&nbsp;<span class="qb">?</span></span>, asked 24 centuries early.</li>
+        <li><b>Plato’s own patch:</b> recollection — the <i>Meno</i>’s slave boy, walked to a geometry proof by questions alone; learning as remembering pre-natal acquaintance.<br><span class="muted small">— verdict as taught: keep the phenomenon (knowledge can be elicited), decline the myth.</span></li>
+      </ul>
+    </div>
+    <div class="footer"><span>Plato · axioms are purchased, not proven</span><span></span></div>
+  </section>
+
+  <!-- 23 DIAGRAM: THREE DOORS -->
+  <section class="slide">
+    <p class="kicker">The handoff · where does the Class live?</p>
+    <h2>Three doors — pick one</h2>
+    <div class="figure">
+      <svg viewBox="0 0 960 400" role="img" aria-label="Three positions on universals: ante rem (Plato), in re (Aristotle), post rem (conceptualism)">
+        <rect x="40" y="60" width="270" height="230" rx="14" fill="#eef0ff" stroke="#4f46e5" stroke-width="3"/>
+        <text x="175" y="105" text-anchor="middle" font-size="26" font-weight="700" fill="#4f46e5" font-family="sans-serif">Door 1 · ante rem</text>
+        <text x="175" y="140" text-anchor="middle" font-size="21" fill="#5a6776" font-family="sans-serif">“before the things”</text>
+        <text x="175" y="185" text-anchor="middle" font-size="22" fill="#1b2733" font-family="sans-serif">the Source exists,</text>
+        <text x="175" y="215" text-anchor="middle" font-size="22" fill="#1b2733" font-family="sans-serif">uninstantiated — a repo</text>
+        <text x="175" y="258" text-anchor="middle" font-size="22" font-weight="700" fill="#4f46e5" font-family="sans-serif">PLATO — finger up</text>
+        <rect x="345" y="60" width="270" height="230" rx="14" fill="#eefaf7" stroke="#0e9488" stroke-width="5"/>
+        <text x="480" y="105" text-anchor="middle" font-size="26" font-weight="700" fill="#0e9488" font-family="sans-serif">Door 2 · in re</text>
+        <text x="480" y="140" text-anchor="middle" font-size="21" fill="#5a6776" font-family="sans-serif">“in the things”</text>
+        <text x="480" y="185" text-anchor="middle" font-size="22" fill="#1b2733" font-family="sans-serif">binaries all the way down;</text>
+        <text x="480" y="215" text-anchor="middle" font-size="22" fill="#1b2733" font-family="sans-serif">last instance dies, type dies</text>
+        <text x="480" y="258" text-anchor="middle" font-size="22" font-weight="700" fill="#0e9488" font-family="sans-serif">ARISTOTLE — palm down</text>
+        <rect x="650" y="60" width="270" height="230" rx="14" fill="#f3f5f8" stroke="#5a6776" stroke-width="3"/>
+        <text x="785" y="105" text-anchor="middle" font-size="26" font-weight="700" fill="#5a6776" font-family="sans-serif">Door 3 · post rem</text>
+        <text x="785" y="140" text-anchor="middle" font-size="21" fill="#5a6776" font-family="sans-serif">“after the things”</text>
+        <text x="785" y="185" text-anchor="middle" font-size="22" fill="#1b2733" font-family="sans-serif">minds diff the instances</text>
+        <text x="785" y="215" text-anchor="middle" font-size="22" fill="#1b2733" font-family="sans-serif">and write the spec themselves</text>
+        <text x="785" y="258" text-anchor="middle" font-size="22" font-weight="700" fill="#5a6776" font-family="sans-serif">conceptualism</text>
+        <text x="480" y="345" text-anchor="middle" font-size="25" font-weight="700" fill="#0e9488" font-family="sans-serif">Session verdict: Door 2 — “drop facsimile, i saw it too.”</text>
+        <text x="480" y="380" text-anchor="middle" font-size="22" fill="#5a6776" font-family="sans-serif">DNA as the form-in-the-flesh (Delbrück’s Nobel-for-Aristotle joke). Lesson 103 begins here.</text>
+      </svg>
+    </div>
+    <div class="footer"><span>Plato · the problem of universals</span><span></span></div>
+  </section>
+
+  <!-- 24 WHY DIALOGUES -->
+  <section class="slide">
+    <p class="kicker">The form · why dialogues, not treatises</p>
+    <h2>The man with final answers never stated one</h2>
+    <div class="fill">
+      <ul>
+        <li><b>The core (learner, first try):</b> “he still believed in the necessity of the learner making the connections themselves.”<br><span class="muted small">— if knowledge is elicited (slave boy) and education is periagōgē, a treatise is the wrong tool <i>in principle</i>.</span></li>
+        <li><b><i>Phaedrus</i> 275d:</b> writing “always says the same thing” and can’t answer back — a treatise is a dead elenchus; a dialogue stages a live one.</li>
+        <li><b>Memorial + honesty:</b> Socrates kept alive doing the thing he died doing — and the author who flagged his own axioms as hypotheses never signs a doctrine in his own voice. Scholars still can’t pin “what Plato believed.” Likely by design.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Plato · thirty-some dialogues, zero treatises</span><span></span></div>
+  </section>
+
+  <!-- 25 LEGACY -->
+  <section class="slide">
+    <p class="kicker">The bigger picture · afterlives</p>
+    <h2>What the first system set in motion</h2>
+    <div class="fill">
+      <ul>
+        <li><b>The Academy</b> (c. 387 BC, fee-less; Aristotle for 20 years) → skeptical turn → wrecked by Sulla, <b>86 BC</b>.<br><span class="muted small">— the “Academy” Justinian closed in 529 AD was a Neoplatonic re-foundation. No continuity; standard trap.</span></li>
+        <li><b>Platonism kept mutating:</b> Plotinus’s Neoplatonism → Augustine (Forms as God’s ideas) → al-Farabi → Ficino’s 1484 translation → the Renaissance.</li>
+        <li><b>Whitehead’s “footnotes to Plato”</b> credits the <i>problems</i>, not the doctrine — and the footnotes include the attacks. <span class="muted small">Nearly every objection raised in this session turned out to be a chapter of the later literature.</span></li>
+        <li><b>Warning shot:</b> Popper, <i>The Spell of Plato</i> (1945) — Kallipolis as totalitarian blueprint. A fight parked for later.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Plato · legacy</span><span></span></div>
+  </section>
+
+  <!-- 26 TAKEAWAYS -->
+  <section class="slide">
+    <p class="kicker">Key takeaways</p>
+    <h2>What to walk away with</h2>
+    <div class="fill">
+      <ul>
+        <li><b>The Forms are an engineering answer</b> to a real constraint: stable knowledge needs a stable object, and the visible world offers none. Concede Heraclitus one realm, Parmenides the other.</li>
+        <li><b>Knowledge = true opinion + the reason why.</b> Opinion is right on-distribution; the tether is what survives Tuesday.</li>
+        <li><b>The soul is partitioned</b> — akrasia is a coup, justice is each part in its lane, and evil is derived: disorder, not a primitive.</li>
+        <li><b>Plato attacked Plato hardest.</b> The Third Man dies if the Form is a spec, not an instance — “my Cat class is not a cat” — at the price of the theory’s grandeur.</li>
+        <li><b>Axioms are purchased, not proven</b> — Plato filed his own demolition clauses (437a). Reading him is auditing the invoices.</li>
+      </ul>
+    </div>
+    <div class="footer"><span>Plato · takeaways</span><span></span></div>
+  </section>
+
+  <!-- 27 NEXT -->
+  <section class="slide center">
+    <p class="kicker">Up next</p>
+    <h1>103 · Aristotle</h1>
+    <p class="lead">Twenty years in the Academy, then the defection: forms live <i>in</i> the things — palm down, not finger up. You’ve already picked his side; now meet the man and audit his invoices too.</p>
+    <div class="footer"><span>Philosophy · fin</span><span></span></div>
+  </section>
+
+  <div class="bar" id="bar"></div>
+</div>
+
+<div class="nav">
+  <button onclick="cycleTheme()" id="themeBtn" aria-label="Toggle light/dark theme">◐ auto</button>
+  <button onclick="go(-1)">‹ Prev</button>
+  <button onclick="go(1)">Next ›</button>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  const bar=document.getElementById('bar');
+  slides.forEach((s,k)=>{
+    const right=s.querySelector('.footer span:last-child');
+    if(right && k>0){ right.classList.add('pageno'); right.textContent=(k+1)+' / '+slides.length; }
+  });
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+  }
+  function go(d){show(i+d)}
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){show(0)} else if(e.key==='End'){show(slides.length-1)}
+  });
+  show(0);
+
+  (function(){
+    const root=document.documentElement, btn=document.getElementById('themeBtn');
+    const order=["auto","light","dark"], label={auto:"◐ auto",light:"☀ light",dark:"☾ dark"};
+    let cur="auto";
+    window.cycleTheme=function(){ cur=order[(order.indexOf(cur)+1)%order.length];
+      if(cur==="auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme",cur);
+      btn.textContent=label[cur]; };
+  })();
+
+  (function(){
+    const pop=document.createElement('div'); pop.className='tip-pop'; document.body.appendChild(pop);
+    const place=e=>{ const pad=14, r=pop.getBoundingClientRect();
+      let x=e.clientX+pad, y=e.clientY+pad;
+      if(x+r.width>innerWidth-8) x=e.clientX-r.width-pad;
+      if(y+r.height>innerHeight-8) y=e.clientY-r.height-pad;
+      pop.style.left=x+'px'; pop.style.top=y+'px'; };
+    document.addEventListener('mouseover',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]');
+      if(!t) return; pop.textContent=t.getAttribute('data-tip'); pop.classList.add('show'); place(e); });
+    document.addEventListener('mousemove',e=>{ if(pop.classList.contains('show')) place(e); });
+    document.addEventListener('mouseout',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]');
+      if(t && !t.contains(e.relatedTarget)) pop.classList.remove('show'); });
+  })();
+</script>
+</body>
+</html>

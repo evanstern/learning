@@ -1,7 +1,7 @@
 {
   "topic": "philosophy",
   "title": "Basics of Philosophy — Socrates Onward",
-  "updated": "2026-07-07",
+  "updated": "2026-07-09",
   "mode": "discussion / conceptual, research-grounded (Wikipedia-first grounding per topic and per lesson; no delegated build unless scoped later)",
   "lifecycle": [
     "scaffolded",
@@ -40,8 +40,8 @@
   },
   "cursor": {
     "current": "102-plato",
-    "currentStatus": "scaffolded",
-    "nextAction": "102-plato grounded (research/Plato branch gate green). Teaching in progress: Socratic loop from the grounding, one raw-notes entry per exchange."
+    "currentStatus": "done",
+    "nextAction": "102-plato complete (taught -> decked -> done; 25-exchange session log, deck + guide on disk). Next: 103-aristotle (candidate) — ready-made opener in guide.md post-lesson notes: the learner's in-re commitment vs. their provisional concession of mathematical objects."
   },
   "lessons": [
     {
@@ -64,14 +64,14 @@
       "id": "102-plato",
       "n": 102,
       "title": "Plato — the Forms, the Republic, and the first system",
-      "status": "scaffolded",
+      "status": "done",
       "artifacts": {
         "checklist": true,
         "rawNotes": true,
         "handoff": false,
         "postBuild": false,
-        "deck": false,
-        "guide": false
+        "deck": true,
+        "guide": true
       },
       "motivator": "Socrates asked 'What is X?' and died without answers; Plato is the student who built the first full answer — Forms, the divided soul, the just city — and founded the school that carried it.",
       "feedsForward": "Sets up Aristotle (trained in, then rebelling against, the Forms), resolves the 101 akrasia debate via the tripartite soul, and plants the Neoplatonism -> Augustine hinge for later in the arc.",
